@@ -1,23 +1,15 @@
-import ShadcnSinglePageApp from "./pages/ShadcnSinglePageApp";
 import HumanAiWorkspace from "./pages/HumanAiWorkspace";
-import GrayscaleChartsShowcasePageElegant from "./pages/GrayscaleChartsShowcasePageElegant";
 import ConversationalWorkspaceChatPage from "./pages/ConversationalWorkspaceChatPage";
 import ConversationalTriVizPlaygroundPage from "./pages/ConversationalTriVizPlaygroundPage";
 import ThreeJsCdnShowcaseWithFallbackPage from "./pages/ThreeJsCdnShowcaseWithFallbackPage";
 import HelloWorldShadcnGrayscaleLanding from "./pages/HelloWorldShadcnGrayscaleLanding";
+import TwitterDataChatPageWithSocketKnowledgeStream from "./pages/TwitterDataChatPageWithSocketKnowledgeStream";
+import TwitterKnowledgeChatPage from "./pages/TwitterKnowledgeChatPage";
 
 export const routes = [
   {
     path: "/",
     element: <HumanAiWorkspace />,
-  },
-  {
-    path: "/shadcn",
-    element: <ShadcnSinglePageApp />,
-  },
-  {
-    path: "/grayscale-charts-showcase",
-    element: <GrayscaleChartsShowcasePageElegant />,
   },
   {
     path: "/conversational-workspace-chat",
@@ -34,5 +26,13 @@ export const routes = [
   {
     path: "/hello-world-shadcn-grayscale-landing",
     element: <HelloWorldShadcnGrayscaleLanding />,
+  },
+  {
+    path: "/twitter-data-chat",
+    element: <TwitterDataChatPageWithSocketKnowledgeStream />,
+  },
+  {
+    path: "/twitter-knowledge-chat",
+    element: <TwitterKnowledgeChatPage />,
   }
 ];

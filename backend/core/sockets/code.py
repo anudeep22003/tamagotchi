@@ -41,6 +41,7 @@ class CodeRequest(BaseModel):
         4. If you are using useMemo or any other react hooks, make sure it is imported from react.
         5. Do not wrap the component that you generate in a AppProvider context. The root of the app is already wrapped in the AppProvider context. So feel free to use the useAppContext hook. No importing needed. 
         6. To import useAppContext, import it like so `import { useAppContext } from '@/context/AppContext';`
+        7. If user asks you to build an app that chats with their twitter data, use teh socket and emit to `request_knowledge_stream` and you would be sending the list of messags so far. This loads the twitter data available to the app fresh every time, and the user can ask questions about their twitter data. The response is sent to the user via the `receive_assistant_message` event. This would update the generative messges so that the user can see the response.
     
         <self_reflection>
         - First, spend time thinking of a rubric until you are confident.
