@@ -3,7 +3,7 @@ import time
 
 from pydantic import ValidationError
 
-from . import client, sio
+from . import async_openai_client, sio
 from .emitters import emit_chat_completion_chunk
 from .types import ChatRequest, Choice, ChoiceDelta, StreamingResponse
 
@@ -50,7 +50,7 @@ async def request_chat_stream(sid: str, messages: dict) -> None:
         print(f"Error: {e}")
         return
     try:
-        stream = await client.chat.completions.create(
+        stream = await async_openai_client.chat.completions.create(
             model=MODEL,
             messages=messages_to_load,
             stream=True,

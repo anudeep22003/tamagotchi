@@ -62,6 +62,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setMessages((prev) => [...prev, newMessage]);
     setInputText("");
 
+    // eslint-disable-next-line
     const messagesToSend = [
       ...messages.map((m) => ({
         role: m.type,

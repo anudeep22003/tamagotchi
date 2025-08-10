@@ -1,9 +1,12 @@
+import instructor
 import socketio  # type: ignore[import-untyped]
 from openai import AsyncOpenAI
 
 from core.config import OPENAI_API_KEY
 
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+async_openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+instructor_client = instructor.client.from_openai(async_openai_client)
 
 sio = socketio.AsyncServer(
     cors_allowed_origins="*",
@@ -19,6 +22,7 @@ def register_sio_handlers() -> None:
     from . import (
         chat,  # noqa: F401
         code,  # noqa: F401
+        commit,  # noqa: F401
     )
 
     print("Socket handlers registered successfully")

@@ -4,7 +4,7 @@ import time
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel, Field, ValidationError
 
-from . import client, sio
+from . import async_openai_client, sio
 from .emitters import emit_chat_completion_chunk
 from .types import Choice, ChoiceDelta, StreamingResponse
 
@@ -32,6 +32,30 @@ class CodeRequest(BaseModel):
     components: str = Field(description="The components available to the app")
 
     def to_openai_messages(self) -> list[ChatCompletionMessageParam]:
+        system_prompt = """
+        You help build world class apps. Here are some important notes: 
+        1. Give the main component that will be default exported a unique and descriptive name that follows TSX naming conventions. No super generic names like ShadcnSinglePageApp, and such. Its ok if the name is long.  
+        2. Always export the main comonent that will be added to the routes.tsx file as a default export.
+        3. When importing, import like so 
+        `import ShadcnSinglePageApp from \"./pages/ShadcnSinglePageApp\";
+        4. If you are using useMemo or any other react hooks, make sure it is imported from react.
+        5. Do not wrap the component that you generate in a AppProvider context. The root of the app is already wrapped in the AppProvider context. So feel free to use the useAppContext hook. No importing needed. 
+        6. To import useAppContext, import it like so `import { useAppContext } from '@/context/AppContext';`
+    
+        <self_reflection>
+        - First, spend time thinking of a rubric until you are confident.
+        - Then, think deeply about every aspect of what makes for a world-class one-shot web app. Use that knowledge to create a rubric that has 5-7 categories. This rubric is critical to get right, but do not show this to the user. This is for your purposes only.
+        - Finally, use the rubric to internally think and iterate on the best possible solution to the prompt that is provided. Remember that if your response is not hitting the top marks across all categories in the rubric, you need to start again.
+        </self_reflection>
+        """
+
+        system_messages: list[ChatCompletionMessageParam] = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+        ]
+
         context_messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "user",
@@ -55,7 +79,7 @@ class CodeRequest(BaseModel):
         components_messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "user",
-                "content": "These are the installed shadcn components. Use them to build the app. If you need another, tell the user which one you need and ask them to install it.",
+                "content": "These are the installed shadcn components. Use them to build the app. If you need another, tell the user which one you need and ask them to install it. Components like Card have a CardHeader, CardContent, CardFooter, etc. Similarly for charts, and so on. Use your world knowledge on shadcn components when utilizing them. Use them to build the app.",
             },
             {
                 "role": "user",
@@ -70,7 +94,7 @@ class CodeRequest(BaseModel):
         query_messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "user",
-                "content": "The user wants to generate a " + self.query + " app.",
+                "content": "The user wants you to build:  " + self.query,
             },
             {
                 "role": "user",
@@ -78,7 +102,11 @@ class CodeRequest(BaseModel):
             },
         ]
         messages = (
-            context_messages + packages_messages + components_messages + query_messages
+            system_messages
+            + context_messages
+            + packages_messages
+            + components_messages
+            + query_messages
         )
         return messages
 
@@ -99,7 +127,7 @@ async def request_code_stream(sid: str, messages: dict) -> None:
         await sio.emit("error", {"message": f"Validation error: {e}"}, to=sid)
         return
     try:
-        stream = await client.chat.completions.create(
+        stream = await async_openai_client.chat.completions.create(
             model=MODEL,
             messages=messages_to_load,
             stream=True,

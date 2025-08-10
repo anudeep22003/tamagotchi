@@ -23,3 +23,8 @@ export interface SimpleResponse {
   content: string;
   timestamp: number;
 }
+
+// Additions for write-and-route
+export interface GeneratedCode {
+  code: string;
+}

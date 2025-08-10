@@ -2,7 +2,7 @@ import { HumanArea } from "@/components/HumanArea";
 import { GenerativeArea } from "@/components/GenerativeArea";
 import { useAppContext } from "@/context/AppContext";
 
-export function HumanAiWorkspace() {
+export default function HumanAiWorkspace() {
   const { showGenerative } = useAppContext();
 
   return (

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
 import type { Message } from "@/lib/messageUtils";
+import { Button } from "./ui/button";
+import type { GeneratedCode } from "@/types/serverTypes";
 
 const GenerativeHeader = () => {
   return (
@@ -10,11 +12,7 @@ const GenerativeHeader = () => {
   );
 };
 
-const GenerativeMessage = ({
-  message,
-}: {
-  message: Message;
-}) => {
+const GenerativeMessage = ({ message }: { message: Message }) => {
   return (
     <div className="bg-secondary/10 rounded-lg p-4">
       <p className="text-sm text-muted-foreground mb-2">
@@ -51,11 +49,49 @@ const GenerativeMessageList = () => {
   );
 };
 
+const InstallAppControls = () => {
+  const { emit, generativeMessages } = useAppContext();
+
+  const hasCode = generativeMessages.length > 0;
+  const lastGenerativeMessage = hasCode
+    ? generativeMessages[generativeMessages.length - 1]
+    : null;
+
+  const handleInstallApp = () => {
+    if (!lastGenerativeMessage) return;
+
+    const payload: GeneratedCode = {
+      code: lastGenerativeMessage.content,
+    };
+
+    emit("write_tsx_and_add_route", payload);
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-xs text-muted-foreground">
+        Use the latest output to create a new route.
+      </p>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={handleInstallApp}
+        disabled={!hasCode}
+      >
+        Install App
+      </Button>
+    </div>
+  );
+};
+
 export const GenerativeArea = () => {
   return (
     <div className="flex flex-col h-full bg-background">
       <GenerativeHeader />
       <GenerativeMessageList />
+      <div className="p-4 border-t border-border">
+        <InstallAppControls />
+      </div>
     </div>
   );
 };
