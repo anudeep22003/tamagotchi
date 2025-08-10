@@ -15,6 +15,10 @@ active_connections: dict[str, dict] = {}
 
 
 def register_sio_handlers() -> None:
+    print("Registering socket handlers...")
     from . import (
         chat,  # noqa: F401
+        code,  # noqa: F401
     )
+
+    print("Socket handlers registered successfully")

@@ -15,7 +15,6 @@ import {
   createHumanMessage,
   returnUrlIfExists,
   type Message,
-  prepareCodeMessage,
 } from "@/lib/messageUtils";
 import { Socket } from "socket.io-client";
 
@@ -28,7 +27,7 @@ interface AppContextType {
   setInputText: (inputText: string) => void;
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
-  handleSendMessage: () => Promise<void>;
+  handleSendMessage: () => void;
   humanMessages: Message[];
   humanAreaMessages: Message[];
   generativeMessages: Message[];
@@ -55,7 +54,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     onChatStream: handleChatStream,
   });
 
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(() => {
     if (!inputText.trim()) return;
 
     const newMessage = createHumanMessage(inputText);
@@ -78,11 +77,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (url) {
       emit("request_url_stream", url);
     } else {
-      // emit("request_chat_stream", {
-      //   messages: messagesToSend,
-      // });
-      const codeMessage = await prepareCodeMessage(inputText);
-      emit("request_code_stream", codeMessage);
+      emit("request_chat_stream", {
+        messages: messagesToSend,
+      });
     }
   }, [inputText, emit, messages]);
 

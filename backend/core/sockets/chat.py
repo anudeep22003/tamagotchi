@@ -1,3 +1,4 @@
+import logging
 import time
 
 from pydantic import ValidationError
@@ -5,6 +6,8 @@ from pydantic import ValidationError
 from . import client, sio
 from .emitters import emit_chat_completion_chunk
 from .types import ChatRequest, Choice, ChoiceDelta, StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 active_connections: dict[str, dict] = {}
 
@@ -37,7 +40,7 @@ async def disconnect(sid: str) -> None:
 
 @sio.event
 async def request_chat_stream(sid: str, messages: dict) -> None:
-    print(f"request_chat_stream {sid}")
+    logger.info(f"request_chat_stream {sid}")
     try:
         validated_chat_request = ChatRequest.model_validate(messages)
         messages_to_load = [
@@ -52,7 +55,7 @@ async def request_chat_stream(sid: str, messages: dict) -> None:
             messages=messages_to_load,
             stream=True,
             temperature=0.7,
-            max_tokens=1000,
+            reasoning_effort="high",
         )
 
         async for chunk in stream:

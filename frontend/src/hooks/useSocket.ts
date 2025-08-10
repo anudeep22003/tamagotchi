@@ -45,6 +45,8 @@ export const useSocket = ({ onChatStream }: UseSocketProps) => {
       }
     );
 
+
+
     socketRef.current = socket;
 
     return () => {

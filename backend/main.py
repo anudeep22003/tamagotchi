@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import AsyncGenerator
 
@@ -8,6 +9,7 @@ from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.api.routers import router as v1_router
+from core.logging import setup_logging
 from core.sockets import register_sio_handlers, sio
 
 ## SETTINGS
@@ -27,8 +29,12 @@ def check_env_vars() -> bool:
 
 @asynccontextmanager
 async def lifecycle_manager(self) -> AsyncGenerator[None, None]:
-    print("Starting FastAPI app")
-    print("Loading Env Variables")
+    # Setup logging first
+    setup_logging(level="INFO")
+    logger = logging.getLogger(__name__)
+
+    logger.debug("Starting FastAPI app")
+    logger.debug("Loading Env Variables")
     if not check_env_vars():
         raise ValueError("Missing required environment variables")
 
@@ -36,7 +42,7 @@ async def lifecycle_manager(self) -> AsyncGenerator[None, None]:
     register_sio_handlers()
 
     yield
-    print("Shutting down FastAPI app")
+    logger.info("Shutting down FastAPI app")
 
 
 fastapi_app = FastAPI(lifespan=lifecycle_manager)

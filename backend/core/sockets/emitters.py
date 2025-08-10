@@ -15,7 +15,7 @@ async def emit_chat_completion_chunk(
         response = StreamingResponse(
             id=chunk.id,
             created=chunk.created,
-            model="gpt-4",
+            model=chunk.model,
             choices=[
                 Choice(
                     index=0,
