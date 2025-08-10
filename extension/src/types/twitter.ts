@@ -39,6 +39,7 @@ export interface TwitterAdapterConfig {
   include_quotes: boolean
   expand_links: boolean
   collect_media: boolean
+  max_scroll_passes: number
 }
 
 export interface TwitterParsingStats {

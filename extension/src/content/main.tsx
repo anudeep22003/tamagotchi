@@ -5,7 +5,7 @@ import type {
   ExtractTwitterThreadMessage,
   ExtractTwitterThreadResponse 
 } from '@/types/messages'
-import { collectTwitterThread } from './twitterThread'
+import { collectTwitterThread, cancelExtraction } from './twitterThread'
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
@@ -98,4 +98,8 @@ function handleExtractTwitterThread(
     }
   }, 0)
 }
+
+window.addEventListener('beforeunload', () => {
+  cancelExtraction()
+})
 

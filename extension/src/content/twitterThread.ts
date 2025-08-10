@@ -7,6 +7,43 @@ import type {
   TwitterParsingStats 
 } from '@/types/twitter'
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+let isCancelled = false
+
+export function cancelExtraction() {
+  isCancelled = true
+}
+
+export async function autoScrollThread(maxPasses = 6): Promise<number> {
+  const scroller = document.querySelector('[aria-label^="Timeline"]') || window
+  let lastHeight = 0
+  let passes = 0
+  
+  isCancelled = false
+  
+  for (let i = 0; i < maxPasses; i++) {
+    if (isCancelled) {
+      console.log('[Twitter] Extraction cancelled by user')
+      break
+    }
+    
+    ;(scroller as any).scrollBy?.(0, 2000)
+    window.scrollBy(0, 2000)
+    await sleep(400)
+    
+    const newHeight = document.body.scrollHeight
+    passes = i + 1
+    
+    if (newHeight <= lastHeight) break
+    lastHeight = newHeight
+    
+    console.log(`[Twitter] Scroll pass ${passes}, height: ${newHeight}`)
+  }
+  
+  return passes
+}
+
 
 function getRootInfo(): { rootId: string; authorHandle: string } {
   const m = location.pathname.match(/\/([^/]+)\/status\/(\d+)/)
@@ -130,6 +167,11 @@ export async function collectTwitterThread(
   
   console.log('[Twitter] Starting thread collection with config:', config)
   
+  const scrollPasses = await autoScrollThread(config.max_scroll_passes)
+  
+  if (isCancelled) {
+    throw new Error('Extraction cancelled by user')
+  }
   
   const { rootId, authorHandle } = getRootInfo()
   console.log(`[Twitter] Collecting thread for ${authorHandle}, root: ${rootId}`)
@@ -205,7 +247,7 @@ export async function collectTwitterThread(
     tweets_found: uniq.length,
     media_extracted: mediaCount,
     links_extracted: linkCount,
-    scroll_passes: 0,
+    scroll_passes: scrollPasses,
     parsing_time_ms: Date.now() - startTime
   }
   

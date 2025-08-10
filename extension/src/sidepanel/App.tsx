@@ -64,7 +64,13 @@ export default function App() {
 
       if (contentType === "twitter") {
         console.log("extracting twitter");
-        setMessage("Extracting visible Twitter content...");
+        setMessage("Auto-scrolling and extracting Twitter thread...");
+        
+        if (!await getUserConfirmation('This will scroll through the entire thread to collect all tweets. Continue?')) {
+          setStatus('idle')
+          setMessage('')
+          return
+        }
 
         const extractResponse = (await chrome.runtime.sendMessage({
           type: "EXTRACT_TWITTER_THREAD",
@@ -79,7 +85,7 @@ export default function App() {
         if (!extractResponse || extractResponse.success === undefined) {
           setStatus("error");
           setMessage(
-            "Twitter extraction timed out or failed. Try HTML fallback."
+            "Twitter extraction timed out or failed. Try reducing scroll passes or try HTML fallback."
           );
           return;
         }
@@ -186,6 +192,12 @@ export default function App() {
       setMessage("HTML fallback failed");
     }
   };
+
+  const getUserConfirmation = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      resolve(window.confirm(message))
+    })
+  }
 
   const handleSend = async () => {
     if (!extractedContent) return;
@@ -317,6 +329,27 @@ export default function App() {
                       />
                       Extract Media & Links
                     </label>
+                    
+                    <div className="scroll-config">
+                      <label htmlFor="scroll-passes">
+                        Max Scroll Passes: {twitterConfig.max_scroll_passes}
+                      </label>
+                      <input
+                        id="scroll-passes"
+                        type="range"
+                        min="3"
+                        max="20"
+                        value={twitterConfig.max_scroll_passes}
+                        onChange={(e) => setTwitterConfig({
+                          ...twitterConfig,
+                          max_scroll_passes: parseInt(e.target.value)
+                        })}
+                        className="scroll-slider"
+                      />
+                      <div className="scroll-hint">
+                        Lower = faster, Higher = more complete
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -10,6 +10,7 @@ export const TWITTER_CONFIG = {
     include_quotes: true,
     expand_links: false,
     collect_media: true,
+    max_scroll_passes: 6,
   },
 } as const;
 
