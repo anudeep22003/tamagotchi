@@ -1,8 +1,8 @@
-import { HumanArea } from "./components/HumanArea";
-import { GenerativeArea } from "./components/GenerativeArea";
-import { AppProvider, useAppContext } from "./context/AppContext";
+import { HumanArea } from "@/components/HumanArea";
+import { GenerativeArea } from "@/components/GenerativeArea";
+import { useAppContext } from "@/context/AppContext";
 
-function AppContainer() {
+export function HumanAiWorkspace() {
   const { showGenerative } = useAppContext();
 
   return (
@@ -37,13 +37,3 @@ function AppContainer() {
     </div>
   );
 }
-
-const App = () => {
-  return (
-    <AppProvider>
-      <AppContainer />
-    </AppProvider>
-  );
-};
-
-export default App;

@@ -25,3 +25,9 @@ dist-ssr
 
 # Misc
 .sample-app
+
+# Claude stuff
+.claude/
+
+# Environment variables
+.env

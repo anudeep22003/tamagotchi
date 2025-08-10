@@ -103,7 +103,7 @@ async def request_code_stream(sid: str, messages: dict) -> None:
             model=MODEL,
             messages=messages_to_load,
             stream=True,
-            reasoning_effort="high",
+            reasoning_effort="low",
         )
 
         async for chunk in stream:
