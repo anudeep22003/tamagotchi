@@ -54,6 +54,7 @@ class StreamingResponse(BaseModel):
     created: int
     model: str
     choices: list[Choice]
+    # content_type: Literal["generative"] = "generative"
 
 
 class SimpleResponse(BaseModel):

@@ -65,7 +65,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line
     const messagesToSend = [
       ...messages.map((m) => ({
-        role: m.type,
+        role: m.contentType,
         content: m.content,
       })),
       {
@@ -87,12 +87,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [inputText, emit, messages]);
 
-  const humanMessages = messages.filter((m) => m.type === "human");
+  const humanMessages = messages.filter(
+    (m) => m.contentType === "human"
+  );
   const humanAreaMessages = messages.filter(
-    (m) => m.type === "human" || m.type === "assistant"
+    (m) => m.contentType === "human" || m.contentType === "assistant"
   );
   const generativeMessages = messages.filter(
-    (m) => m.type === "generative"
+    (m) => m.contentType === "generative"
   );
 
   return (

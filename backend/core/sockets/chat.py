@@ -54,8 +54,8 @@ async def request_chat_stream(sid: str, messages: dict) -> None:
             model=MODEL,
             messages=messages_to_load,
             stream=True,
-            temperature=0.7,
-            reasoning_effort="high",
+            # temperature=0.7,
+            reasoning_effort="low",
         )
 
         async for chunk in stream:

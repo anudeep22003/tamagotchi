@@ -5,14 +5,14 @@ import type {
 
 export interface Message {
   id: string;
-  type: "human" | "generative" | "assistant";
+  contentType: "human" | "generative" | "assistant";
   content: string;
   timestamp: Date;
 }
 
 export const createHumanMessage = (content: string): Message => ({
   id: `human-${Date.now()}`,
-  type: "human",
+  contentType: "human",
   content,
   timestamp: new Date(),
 });
@@ -29,7 +29,7 @@ export const updateMessagesWithStreamData = (
     const lastMessage = messages[messages.length - 1];
 
     if (
-      lastMessage?.type === "generative" &&
+      lastMessage?.contentType === "generative" &&
       lastMessage.id === data.id
     ) {
       // Update existing message
@@ -42,7 +42,7 @@ export const updateMessagesWithStreamData = (
       // Create new message
       const newMessage: Message = {
         id: data.id,
-        type: "generative",
+        contentType: "generative",
         content: choice.delta.content,
         timestamp: new Date(data.created * 1000),
       };
@@ -52,7 +52,7 @@ export const updateMessagesWithStreamData = (
     // SimpleResponse
     const newMessage: Message = {
       id: data.id,
-      type: "generative",
+      contentType: "generative",
       content: data.content,
       timestamp: new Date(data.timestamp),
     };
