@@ -190,7 +190,6 @@ async def write_tsx_and_add_route(sid: str, data: dict) -> None:
     await sio.emit("receive_assistant_message", response, to=sid)
 
 
-@sio.event
 async def add_route(sid: str, data: dict) -> None:
     try:
         request = AddRouteRequest.model_validate(data)
@@ -214,7 +213,6 @@ async def add_route(sid: str, data: dict) -> None:
     await sio.emit("receive_assistant_message", response.model_dump_json(), to=sid)
 
 
-@sio.event
 async def write_tsx(sid: str, data: dict) -> None:
     try:
         request = WriteTsxRequest.model_validate(data)
