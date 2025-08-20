@@ -18,6 +18,7 @@ import {
   // prepareCodeMessage,
 } from "@/lib/messageUtils";
 import { Socket } from "socket.io-client";
+import type { Envelope } from "@/types/envelopeType";
 
 interface AppContextType {
   messages: Message[];
@@ -58,18 +59,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
-    const newMessage: {
-      requestId: string;
-      data: {
-        input: string;
-      };
-    } = {
-      requestId: `human-${Date.now()}`,
+    const envelope: Envelope<{
+      input: string;
+    }> = {
+      v: "1",
+      id: `human-${Date.now()}`,
+      ts: new Date().getTime(),
+
+      requestId: crypto.randomUUID(),
+
+      direction: "c2s",
+      domain: "chat",
+      action: "stream",
+      modifier: "start",
       data: {
         input: inputText,
       },
     };
-
     // setMessages((prev) => [...prev, newMessage]);
     setInputText("");
 
@@ -87,7 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     socket?.emit(
       "c2s.chat.stream.start",
-      newMessage,
+      envelope,
       (ack: { requestId: string; streamId: string; ok: boolean }) => {
         console.log("ack", ack);
       }
