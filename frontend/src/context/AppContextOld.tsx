@@ -12,10 +12,10 @@ import type {
 } from "@/types/serverTypes";
 import {
   updateMessagesWithStreamData,
-  // createHumanMessage,
-  // returnUrlIfExists,
+  createHumanMessage,
+  returnUrlIfExists,
   type Message,
-  // prepareCodeMessage,
+  prepareCodeMessage,
 } from "@/lib/messageUtils";
 import { Socket } from "socket.io-client";
 
@@ -58,51 +58,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
-    const newMessage: {
-      requestId: string;
-      data: {
-        input: string;
-      };
-    } = {
-      requestId: `human-${Date.now()}`,
-      data: {
-        input: inputText,
-      },
-    };
-
-    // setMessages((prev) => [...prev, newMessage]);
+    const newMessage = createHumanMessage(inputText);
+    setMessages((prev) => [...prev, newMessage]);
     setInputText("");
 
     // eslint-disable-next-line
-    // const messagesToSend = [
-    //   ...messages.map((m) => ({
-    //     role: m.contentType,
-    //     content: m.content,
-    //   })),
-    //   {
-    //     role: "human",
-    //     content: inputText,
-    //   },
-    // ];
+    const messagesToSend = [
+      ...messages.map((m) => ({
+        role: m.contentType,
+        content: m.content,
+      })),
+      {
+        role: "human",
+        content: inputText,
+      },
+    ];
 
-    socket?.emit(
-      "c2s.chat.stream.start",
-      newMessage,
-      (ack: { requestId: string; streamId: string; ok: boolean }) => {
-        console.log("ack", ack);
-      }
-    );
+    const url = returnUrlIfExists(inputText);
 
-    // if (url) {
-    //   emit("request_url_stream", url);
-    // } else {
-    //   emit("request_chat_stream", {
-    //     messages: messagesToSend,
-    //   });
-    // const codeMessage = await prepareCodeMessage(inputText);
-    // emit("request_code_stream", codeMessage);
-    // }
-  }, [inputText, emit, messages, socket]);
+    if (url) {
+      emit("request_url_stream", url);
+    } else {
+      emit("request_chat_stream", {
+        messages: messagesToSend,
+      });
+      // const codeMessage = await prepareCodeMessage(inputText);
+      // emit("request_code_stream", codeMessage);
+    }
+  }, [inputText, emit, messages]);
 
   const humanMessages = messages.filter(
     (m) => m.contentType === "human"
