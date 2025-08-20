@@ -1,0 +1,78 @@
+import uuid
+from datetime import datetime, timezone
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
+
+
+class AliasedBaseModel(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    def model_dump_json(self, **kwargs) -> str:
+        return super().model_dump_json(by_alias=True, **kwargs)
+
+
+class ErrorDetails(AliasedBaseModel):
+    code: Literal[
+        "E_INVALID",
+        "E_UNAUTHORIZED",
+        "E_FORBIDDEN",
+        "E_NOT_FOUND",
+        "E_CONFLICT",
+        "E_RATE_LIMITED",
+        "E_TIMEOUT",
+        "E_OVERFLOW",
+        "E_UNAVAILABLE",
+        "E_INTERNAL",
+    ]
+    message: str
+    details: dict | None = None
+
+
+class Envelope(AliasedBaseModel):
+    # protocol
+    v: str = "1"
+
+    # identity & timing
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ts: int = Field(
+        default_factory=lambda: int(datetime.now(timezone.utc).timestamp() * 1000)
+    )
+
+    # correlation
+    request_id: str | None = None  # requestId in TS
+    stream_id: str | None = None  # streamId in TS
+    seq: int | None = None  # per-stream sequence, starting at 1
+
+    # control
+    direction: Literal["c2s", "s2c"]
+    domain: Literal["chat"]
+    action: Literal["stream"]
+    modifier: Literal["start", "chunk", "end"]  # Remove | None, make it required
+
+    # payload
+    data: dict
+
+    # errors
+    error: ErrorDetails | None = None
+
+
+class Data(AliasedBaseModel):
+    input: str
+
+
+class AckOk(AliasedBaseModel):
+    ok: bool = True
+    request_id: str
+    stream_id: str
+
+
+class Error(AliasedBaseModel):
+    code: str
+    message: str
+
+
+class AckFail(AliasedBaseModel):
+    ok: bool = False
+    error: Error
