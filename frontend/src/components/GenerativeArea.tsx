@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
-import type { Message } from "@/lib/messageUtils";
 import { Button } from "./ui/button";
 import type { GeneratedCode } from "@/types/serverTypes";
+import type { BaseMessage } from "@/store/useMessageStore";
 
 const GenerativeHeader = () => {
   return (
@@ -12,12 +12,12 @@ const GenerativeHeader = () => {
   );
 };
 
-const GenerativeMessage = ({ message }: { message: Message }) => {
+const GenerativeMessage = ({ message }: { message: BaseMessage }) => {
   return (
     <div className="bg-secondary/10 rounded-lg p-4">
-      <p className="text-sm text-muted-foreground mb-2">
-        {message.timestamp.toLocaleTimeString()}
-      </p>
+      {/* <p className="text-sm text-muted-foreground mb-2">
+        {message.ts.toLocaleTimeString()}
+      </p> */}
       <pre className="whitespace-pre-wrap text-sm bg-background border border-border rounded p-3 overflow-x-auto">
         {message.content}
       </pre>

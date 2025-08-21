@@ -3,12 +3,17 @@ import io from "socket.io-client";
 import { BACKEND_URL } from "@/constants";
 import type { StreamingResponse } from "@/types/serverTypes";
 import { Socket } from "socket.io-client";
+import type { Envelope } from "@/types/envelopeType";
 
 interface UseSocketProps {
   onChatStream: (data: StreamingResponse) => void;
+  onStreamChunk?: (envelope: Envelope<{ delta: string }>) => void;
 }
 
-export const useSocket = ({ onChatStream }: UseSocketProps) => {
+export const useSocket = ({
+  onChatStream,
+  onStreamChunk,
+}: UseSocketProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
@@ -45,14 +50,21 @@ export const useSocket = ({ onChatStream }: UseSocketProps) => {
       }
     );
 
-
+    if (onStreamChunk) {
+      socket.on(
+        "s2c.chat.stream.chunk",
+        (e: Envelope<{ delta: string }>) => {
+          onStreamChunk(e);
+        }
+      );
+    }
 
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
     };
-  }, [onChatStream]);
+  }, [onChatStream, onStreamChunk]);
 
   return {
     isConnected,

@@ -10,29 +10,27 @@ import type {
   SimpleResponse,
   StreamingResponse,
 } from "@/types/serverTypes";
-import {
-  updateMessagesWithStreamData,
-  // createHumanMessage,
-  // returnUrlIfExists,
-  type Message,
-  // prepareCodeMessage,
-} from "@/lib/messageUtils";
+import // updateMessagesWithStreamData,
+// createHumanMessage,
+// returnUrlIfExists,
+// prepareCodeMessage,
+"@/lib/messageUtils";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
+import {
+  useMessageStore,
+  type BaseMessage,
+} from "@/store/useMessageStore";
 
 interface AppContextType {
-  messages: Message[];
-  setMessages: (
-    messages: Message[] | ((prev: Message[]) => Message[])
-  ) => void;
   inputText: string;
   setInputText: (inputText: string) => void;
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
   handleSendMessage: () => Promise<void>;
-  humanMessages: Message[];
-  humanAreaMessages: Message[];
-  generativeMessages: Message[];
+  humanMessages: BaseMessage[];
+  humanAreaMessages: BaseMessage[];
+  generativeMessages: BaseMessage[];
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -41,19 +39,33 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [showGenerative, setShowGenerative] = useState(false);
 
+  // Get store functions
+  const createStreamMessage = useMessageStore(
+    (state) => state.createStreamMessage
+  );
+
   const handleChatStream = useCallback(
     (data: StreamingResponse | SimpleResponse) => {
-      setMessages((prev) => updateMessagesWithStreamData(prev, data));
+      console.log("data", data);
     },
     []
   );
 
+  // Create a stable stream chunk handler that doesn't cause re-renders
+  const handleStreamChunk = useCallback(
+    (envelope: Envelope<{ delta: string }>) => {
+      // Use the store directly to avoid dependency issues
+      useMessageStore.getState().updateStreamingMessage(envelope);
+    },
+    [] // No dependencies needed
+  );
+
   const { isConnected, emit, socket } = useSocket({
     onChatStream: handleChatStream,
+    onStreamChunk: handleStreamChunk,
   });
 
   const handleSendMessage = useCallback(async () => {
@@ -96,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       envelope,
       (ack: { requestId: string; streamId: string; ok: boolean }) => {
         console.log("ack", ack);
+        createStreamMessage(ack.streamId, ack.requestId);
       }
     );
 
@@ -103,28 +116,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     //   emit("request_url_stream", url);
     // } else {
     //   emit("request_chat_stream", {
-    //     messages: messagesToSend,
+    //   messages: messagesToSend,
     //   });
     // const codeMessage = await prepareCodeMessage(inputText);
     // emit("request_code_stream", codeMessage);
     // }
-  }, [inputText, emit, messages, socket]);
+  }, [inputText, emit, socket, createStreamMessage]);
 
-  const humanMessages = messages.filter(
-    (m) => m.contentType === "human"
+  // Get messages from store
+  const humanMessages = useMessageStore((state) => state.humanMessages);
+  const humanAreaMessages = useMessageStore(
+    (state) => state.humanAreaMessages
   );
-  const humanAreaMessages = messages.filter(
-    (m) => m.contentType === "human" || m.contentType === "assistant"
-  );
-  const generativeMessages = messages.filter(
-    (m) => m.contentType === "generative"
+  const generativeMessages = useMessageStore(
+    (state) => state.codeMessages
   );
 
   return (
     <AppContext.Provider
       value={{
-        messages,
-        setMessages,
         inputText,
         setInputText,
         showGenerative,
