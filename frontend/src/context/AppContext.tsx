@@ -8,7 +8,12 @@ import {
 import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
-import { useMessageStore, type TypedMessage } from "@/store/useMessageStore";
+import {
+  useHumanAreaMessages,
+  useMessageStore,
+  type TypedMessage,
+} from "@/store/useMessageStore";
+import { constructChatStreamMessages } from "@/lib/messageUtils";
 
 interface AppContextType {
   inputText: string;
@@ -32,6 +37,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     (state) => state.createStreamMessage
   );
   const addMessage = useMessageStore((state) => state.addMessage);
+  const humanAreaMessages = useHumanAreaMessages();
 
   const { isConnected, emit, socket } = useSocket();
 
@@ -47,9 +53,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     addMessage(humanMessage);
 
-    const envelope: Envelope<{
-      input: string;
-    }> = {
+    const messagesToSend =
+      constructChatStreamMessages(humanAreaMessages);
+
+    const data: ServerFormattedMessage[] = [
+      ...messagesToSend,
+      {
+        role: "user",
+        content: inputText,
+      },
+    ];
+
+    type ServerFormattedMessage = {
+      role: string;
+      content: string;
+    };
+
+    const envelope: Envelope<ServerFormattedMessage[]> = {
       v: "1",
       id: `human-${Date.now()}`,
       ts: new Date().getTime(),
@@ -60,9 +80,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       domain: "chat",
       action: "stream",
       modifier: "start",
-      data: {
-        input: inputText,
-      },
+      data,
     };
     setInputText("");
 
@@ -76,7 +94,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         "assistant"
       );
     });
-  }, [inputText, emit, createStreamMessage, addMessage]);
+  }, [
+    inputText,
+    emit,
+    createStreamMessage,
+    addMessage,
+    humanAreaMessages,
+  ]);
 
   return (
     <AppContext.Provider

@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from core.sockets.types import Message
+
 
 class AliasedBaseModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
@@ -52,14 +54,14 @@ class Envelope(AliasedBaseModel):
     modifier: Literal["start", "chunk", "end"]  # Remove | None, make it required
 
     # payload
-    data: dict
+    data: dict | list[Message]
 
     # errors
     error: ErrorDetails | None = None
 
 
 class Data(AliasedBaseModel):
-    input: str
+    messages: list[Message]
 
 
 class AckOk(AliasedBaseModel):

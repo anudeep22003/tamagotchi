@@ -4,8 +4,10 @@ import uuid
 
 from pydantic import ValidationError
 
+from core.sockets.types import Message
+
 from . import async_openai_client, sio
-from .envelope_type import AckFail, AckOk, Data, Envelope, Error
+from .envelope_type import AckFail, AckOk, Envelope, Error
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,11 @@ async def handle_chat_stream_start(
         ).model_dump_json()
 
     try:
-        validated_data = Data.model_validate(validated_envelope.data)
+        # validated_data = Data.model_validate(validated_envelope.data)
+        if isinstance(validated_envelope.data, list):
+            validated_data = [
+                Message.model_validate(msg) for msg in validated_envelope.data
+            ]
     except ValidationError:
         return AckFail(
             ok=False,
@@ -80,15 +86,10 @@ async def handle_chat_stream_start(
     ).model_dump_json()
 
 
-async def stream_chunks(sid: str, data: Data, request_id: str, stream_id: str):
+async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_id: str):
     stream = await async_openai_client.chat.completions.create(
         model=MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": data.input,
-            }
-        ],
+        messages=[msg.to_openai_message() for msg in data],
         stream=True,
         reasoning_effort="low",
     )

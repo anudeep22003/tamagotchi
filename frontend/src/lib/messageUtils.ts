@@ -1,3 +1,5 @@
+import type { TypedMessage } from "@/store/useMessageStore";
+
 export const returnUrlIfExists = (text: string): string | null => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const match = text.match(urlRegex);
@@ -36,4 +38,17 @@ export const prepareCodeMessage = async (
     console.error("Error reading files:", error);
     throw new Error(`Failed to prepare code message: ${error}`);
   }
+};
+
+export const constructChatStreamMessages = (
+  messages: TypedMessage[]
+) => {
+  const messagesToSend = messages.map((message) => {
+    return {
+      role: message.type,
+      content: message.content,
+    };
+  });
+
+  return messagesToSend;
 };
