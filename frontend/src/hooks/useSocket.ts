@@ -51,12 +51,20 @@ export const useSocket = ({
     );
 
     if (onStreamChunk) {
-      socket.on(
-        "s2c.chat.stream.chunk",
-        (e: Envelope<{ delta: string }>) => {
-          onStreamChunk(e);
+      socket.on("s2c.chat.stream.chunk", (rawMessage: string) => {
+        try {
+          // Parse the raw message string
+          const envelope: Envelope<{ delta: string }> =
+            JSON.parse(rawMessage);
+          onStreamChunk(envelope);
+        } catch (error) {
+          console.error(
+            "Error parsing stream chunk:",
+            error,
+            rawMessage
+          );
         }
-      );
+      });
     }
 
     socketRef.current = socket;

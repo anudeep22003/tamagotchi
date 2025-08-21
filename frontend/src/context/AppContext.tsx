@@ -88,39 +88,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         input: inputText,
       },
     };
-    // setMessages((prev) => [...prev, newMessage]);
     setInputText("");
 
-    // eslint-disable-next-line
-    // const messagesToSend = [
-    //   ...messages.map((m) => ({
-    //     role: m.contentType,
-    //     content: m.content,
-    //   })),
-    //   {
-    //     role: "human",
-    //     content: inputText,
-    //   },
-    // ];
-
-    socket?.emit(
-      "c2s.chat.stream.start",
-      envelope,
-      (ack: { requestId: string; streamId: string; ok: boolean }) => {
-        console.log("ack", ack);
-        createStreamMessage(ack.streamId, ack.requestId);
-      }
-    );
-
-    // if (url) {
-    //   emit("request_url_stream", url);
-    // } else {
-    //   emit("request_chat_stream", {
-    //   messages: messagesToSend,
-    //   });
-    // const codeMessage = await prepareCodeMessage(inputText);
-    // emit("request_code_stream", codeMessage);
-    // }
+    socket?.emit("c2s.chat.stream.start", envelope, (ack: string) => {
+      console.log("ack", ack);
+      const ack_parsed: { streamId: string; requestId: string } =
+        JSON.parse(ack);
+      createStreamMessage(ack_parsed.streamId, ack_parsed.requestId);
+    });
   }, [inputText, emit, socket, createStreamMessage]);
 
   // Get messages from store

@@ -106,7 +106,7 @@ async def stream_chunks(sid: str, data: Data, request_id: str, stream_id: str):
                 action="stream",
                 modifier="chunk",
                 data={
-                    "content": chunk.choices[0].delta.content,
+                    "delta": chunk.choices[0].delta.content,
                 },
             )
             await sio.emit(
