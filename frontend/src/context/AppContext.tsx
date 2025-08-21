@@ -8,7 +8,10 @@ import {
 import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
-import { useMessageStore } from "@/store/useMessageStore";
+import {
+  useMessageStore,
+  type HumanMessage,
+} from "@/store/useMessageStore";
 
 interface AppContextType {
   inputText: string;
@@ -31,11 +34,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const createStreamMessage = useMessageStore(
     (state) => state.createStreamMessage
   );
+  const addHumanMessage = useMessageStore(
+    (state) => state.addHumanMessage
+  );
 
   const { isConnected, emit, socket } = useSocket();
 
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
+
+    const humanMessage: HumanMessage = {
+      id: `human-${Date.now()}`,
+      ts: new Date().getTime(),
+      content: inputText,
+    };
+
+    addHumanMessage(humanMessage);
 
     const envelope: Envelope<{
       input: string;

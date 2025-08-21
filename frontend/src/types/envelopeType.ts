@@ -1,3 +1,8 @@
+export type Direction = "c2s" | "s2c";
+export type Domain = "chat" | "code";
+export type Action = "stream";
+export type Modifier = "start" | "chunk" | "end";
+
 export type Envelope<T = unknown> = {
   // protocol
   v: "1";
@@ -9,13 +14,13 @@ export type Envelope<T = unknown> = {
   // correlation
   requestId?: string; // request you're replying to
   streamId?: string; // server-minted for streams
-  seq?: number; // per-stream sequence, starting at 1
+  seq?: number; // per-stream sequence, starting at 0
 
   // control
-  direction: "c2s" | "s2c";
-  domain: "chat";
-  action: "stream";
-  modifier: "start" | "chunk" | "end";
+  direction: Direction;
+  domain: Domain;
+  action: Action;
+  modifier: Modifier;
 
   // payload
   data: T;
