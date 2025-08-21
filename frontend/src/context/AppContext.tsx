@@ -8,10 +8,7 @@ import {
 import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
-import {
-  useMessageStore,
-  type HumanMessage,
-} from "@/store/useMessageStore";
+import { useMessageStore, type TypedMessage } from "@/store/useMessageStore";
 
 interface AppContextType {
   inputText: string;
@@ -34,22 +31,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const createStreamMessage = useMessageStore(
     (state) => state.createStreamMessage
   );
-  const addHumanMessage = useMessageStore(
-    (state) => state.addHumanMessage
-  );
+  const addMessage = useMessageStore((state) => state.addMessage);
 
   const { isConnected, emit, socket } = useSocket();
 
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
-    const humanMessage: HumanMessage = {
+    const humanMessage: TypedMessage = {
       id: `human-${Date.now()}`,
       ts: new Date().getTime(),
       content: inputText,
+      type: "human",
     };
 
-    addHumanMessage(humanMessage);
+    addMessage(humanMessage);
 
     const envelope: Envelope<{
       input: string;
@@ -74,9 +70,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.log("ack", ack);
       const ack_parsed: { streamId: string; requestId: string } =
         JSON.parse(ack);
-      createStreamMessage(ack_parsed.streamId, ack_parsed.requestId);
+      createStreamMessage(
+        ack_parsed.streamId,
+        ack_parsed.requestId,
+        "assistant"
+      );
     });
-  }, [inputText, emit, createStreamMessage]);
+  }, [inputText, emit, createStreamMessage, addMessage]);
 
   return (
     <AppContext.Provider

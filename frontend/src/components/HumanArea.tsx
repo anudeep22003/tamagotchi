@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
-import { useMessageStore } from "@/store/useMessageStore";
+import { useHumanAreaMessages } from "@/store/useMessageStore";
 import { useEffect, useRef } from "react";
 import { MessageInput } from "./MessageInput";
 
@@ -13,9 +13,7 @@ const ConversationHeader = () => {
 };
 
 const MessageList = () => {
-  const humanAreaMessages = useMessageStore(
-    (state) => state.humanAreaMessages
-  );
+  const humanAreaMessages = useHumanAreaMessages();
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {

@@ -1,31 +1,32 @@
 import type { Envelope } from "@/types/envelopeType";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
 
 export interface BaseMessage {
   id: string;
   ts: number;
   content: string;
+
+  // can only one of these values be present, or theyre both present or both absent?
+  streamId?: string;
+  requestId?: string;
+
+  type: MessageType;
 }
 
-export type HumanMessage = BaseMessage;
+export type MessageType = "human" | "assistant" | "code";
 
-export interface IntelligenceMessage extends BaseMessage {
-  streamId: string;
-  requestId: string;
-}
+export type TypedMessage = BaseMessage;
 
 interface MessageState {
-  allMessages: BaseMessage[];
-  humanMessages: BaseMessage[];
-  humanAreaMessages: BaseMessage[];
-  assistantMessages: IntelligenceMessage[];
-  codeMessages: IntelligenceMessage[];
-  addAssistantMessage: (message: IntelligenceMessage) => void;
-  addCodeMessage: (message: IntelligenceMessage) => void;
-  addToAllMessages: (messages: BaseMessage[]) => void;
-  addHumanMessage: (message: HumanMessage) => void;
-  createStreamMessage: (streamId: string, requestId: string) => void;
+  allMessages: TypedMessage[];
+  addMessage: (message: TypedMessage) => void;
+  createStreamMessage: (
+    streamId: string,
+    requestId: string,
+    type: MessageType
+  ) => void;
   updateStreamingMessage: (
     envelope: Envelope<{ delta: string }>
   ) => void;
@@ -35,99 +36,47 @@ export const useMessageStore = create<MessageState>()(
   devtools(
     (set) => ({
       allMessages: [],
-      humanMessages: [],
-      humanAreaMessages: [],
-      assistantMessages: [],
-      codeMessages: [],
-      addHumanMessage: (message) =>
+      addMessage: (message) =>
         set((state) => ({
-          humanMessages: [...state.humanMessages, message],
-          allMessages: [...state.allMessages, message],
-          humanAreaMessages: [...state.humanAreaMessages, message],
-        })),
-      addAssistantMessage: (message) =>
-        set((state) => ({
-          assistantMessages: [...state.assistantMessages, message],
-          allMessages: [...state.allMessages, message],
-          humanAreaMessages: [...state.humanAreaMessages, message],
-        })),
-      addCodeMessage: (message) =>
-        set((state) => ({
-          codeMessages: [...state.codeMessages, message],
           allMessages: [...state.allMessages, message],
         })),
-      addToAllMessages: (messages) =>
-        set((state) => ({
-          allMessages: [...state.allMessages, ...messages],
-        })),
-      createStreamMessage: (streamId, requestId) => {
-        console.log("createStreamMessage", streamId, requestId);
-        const streamMessage: IntelligenceMessage = {
+
+      createStreamMessage: (streamId, requestId, type) => {
+        const newMessage: TypedMessage = {
+          id: `stream-${Date.now()}`,
+          ts: Date.now(),
+          content: "",
           streamId,
           requestId,
-          id: requestId,
-          content: "",
-          ts: Date.now(),
+          type,
         };
 
         set((state) => ({
-          ...state,
-          assistantMessages: [
-            ...state.assistantMessages,
-            streamMessage,
-          ],
-          allMessages: [...state.allMessages, streamMessage],
-          humanAreaMessages: [
-            ...state.humanAreaMessages,
-            streamMessage,
-          ],
+          allMessages: [...state.allMessages, newMessage],
         }));
       },
       updateStreamingMessage: (envelope) => {
         set((state) => {
           const { streamId } = envelope;
-          const messageIndex = state.assistantMessages.findIndex(
+          const messageIndex = state.allMessages.findIndex(
             (message) => message.streamId === streamId
           );
 
           if (messageIndex === -1) {
-            return state; // Return unchanged state if message not found
+            return state;
           }
 
-          // Create updated message
           const updatedMessage = {
-            ...state.assistantMessages[messageIndex],
+            ...state.allMessages[messageIndex],
             content:
-              state.assistantMessages[messageIndex].content +
+              state.allMessages[messageIndex].content +
               envelope.data.delta,
           };
 
-          // Create new arrays with the updated message
-          const updatedAssistantMessages = [...state.assistantMessages];
-          updatedAssistantMessages[messageIndex] = updatedMessage;
+          const updatedMessages = [...state.allMessages];
+          updatedMessages[messageIndex] = updatedMessage;
 
-          const updatedAllMessages = [...state.allMessages];
-          const allMessageIndex = updatedAllMessages.findIndex(
-            (msg) => msg.id === updatedMessage.id
-          );
-          if (allMessageIndex !== -1) {
-            updatedAllMessages[allMessageIndex] = updatedMessage;
-          }
-
-          const updatedHumanAreaMessages = [...state.humanAreaMessages];
-          const humanAreaIndex = updatedHumanAreaMessages.findIndex(
-            (msg) => msg.id === updatedMessage.id
-          );
-          if (humanAreaIndex !== -1) {
-            updatedHumanAreaMessages[humanAreaIndex] = updatedMessage;
-          }
-
-          return {
-            ...state,
-            assistantMessages: updatedAssistantMessages,
-            allMessages: updatedAllMessages,
-            humanAreaMessages: updatedHumanAreaMessages,
-          };
+          return { ...state, allMessages: updatedMessages };
         });
       },
     }),
@@ -137,3 +86,34 @@ export const useMessageStore = create<MessageState>()(
     }
   )
 );
+
+// Selector hooks
+export const useHumanMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter((m) => m.type === "human")
+    )
+  );
+
+export const useAssistantMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter((m) => m.type === "assistant")
+    )
+  );
+
+export const useCodeMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter((m) => m.type === "code")
+    )
+  );
+
+export const useHumanAreaMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter(
+        (m) => m.type === "human" || m.type === "assistant"
+      )
+    )
+  );
