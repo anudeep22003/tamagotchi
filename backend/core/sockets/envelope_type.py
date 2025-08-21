@@ -49,7 +49,7 @@ class Envelope(AliasedBaseModel):
 
     # control
     direction: Literal["c2s", "s2c"]
-    domain: Literal["chat"]
+    domain: Literal["assistant"]
     action: Literal["stream"]
     modifier: Literal["start", "chunk", "end"]  # Remove | None, make it required
 

@@ -77,14 +77,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       requestId: crypto.randomUUID(),
 
       direction: "c2s",
-      domain: "chat",
+      domain: "assistant",
       action: "stream",
       modifier: "start",
       data,
     };
     setInputText("");
 
-    emit("c2s.chat.stream.start", envelope, (ack: string) => {
+    emit("c2s.assistant.stream.start", envelope, (ack: string) => {
       console.log("ack", ack);
       const ack_parsed: { streamId: string; requestId: string } =
         JSON.parse(ack);

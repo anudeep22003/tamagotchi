@@ -1,5 +1,5 @@
 export type Direction = "c2s" | "s2c";
-export type Domain = "chat" | "code";
+export type Domain = "assistant" | "code";
 export type Action = "stream";
 export type Modifier = "start" | "chunk" | "end";
 

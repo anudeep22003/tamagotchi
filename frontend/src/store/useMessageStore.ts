@@ -1,4 +1,4 @@
-import type { Envelope } from "@/types/envelopeType";
+import type { Domain, Envelope } from "@/types/envelopeType";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
@@ -15,7 +15,7 @@ export interface BaseMessage {
   type: MessageType;
 }
 
-export type MessageType = "human" | "assistant" | "code";
+export type MessageType = "human" | Domain;
 
 export type TypedMessage = BaseMessage;
 

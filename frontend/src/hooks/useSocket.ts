@@ -48,7 +48,7 @@ export const useSocket = () => {
       setIsConnected(false);
     });
 
-    socket.on("s2c.chat.stream.chunk", (rawMessage: string) => {
+    socket.on("s2c.assistant.stream.chunk", (rawMessage: string) => {
       try {
         const envelope: Envelope<{ delta: string }> =
           JSON.parse(rawMessage);

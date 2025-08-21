@@ -14,20 +14,20 @@ logger = logging.getLogger(__name__)
 MODEL = "gpt-5"
 
 
-@sio.on("c2s.chat.stream.start")
+@sio.on("c2s.assistant.stream.start")
 async def handle_chat_stream_start(
     sid: str,
     envelope: dict,
 ) -> str:
     """
     Sequence of events:
-    - client sends a c2s.chat.stream.start event with:
+    - client sends a c2s.assistant.stream.start event with:
         - a request_id
         - the data that is the input by the user
     - the server acknowledges this and also sends a server minted stream_id
-    - server starts streaming chunks to the client via s2c.chat.stream.chunk
+    - server starts streaming chunks to the client via s2c.assistant.stream.chunk
     - client accumulates the chunks on the client side
-    - server sends a s2c.chat.stream.end event
+    - server sends a s2c.assistant.stream.end event
     """
     try:
         validated_envelope = Envelope.model_validate(envelope)
@@ -103,7 +103,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 stream_id=stream_id,
                 seq=seq,
                 direction="s2c",
-                domain="chat",
+                domain="assistant",
                 action="stream",
                 modifier="chunk",
                 data={
@@ -111,7 +111,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 },
             )
             await sio.emit(
-                "s2c.chat.stream.chunk",
+                "s2c.assistant.stream.chunk",
                 envelope_to_send.model_dump_json(),
                 to=sid,
             )
@@ -121,7 +121,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 stream_id=stream_id,
                 seq=seq,
                 direction="s2c",
-                domain="chat",
+                domain="assistant",
                 action="stream",
                 modifier="end",
                 data={
@@ -129,5 +129,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 },
             )
             await sio.emit(
-                "s2c.chat.stream.end", envelope_to_send.model_dump_json(), to=sid
+                "s2c.assistant.stream.end",
+                envelope_to_send.model_dump_json(),
+                to=sid,
             )
