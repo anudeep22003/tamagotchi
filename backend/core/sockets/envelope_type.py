@@ -60,10 +60,6 @@ class Envelope(AliasedBaseModel):
     error: ErrorDetails | None = None
 
 
-class Data(AliasedBaseModel):
-    messages: list[Message]
-
-
 class AckOk(AliasedBaseModel):
     ok: bool = True
     request_id: str
