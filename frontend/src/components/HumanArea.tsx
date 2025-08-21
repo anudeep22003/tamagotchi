@@ -27,12 +27,24 @@ const MessageList = () => {
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {humanAreaMessages.map((message) => (
-        <pre
+        <div
           key={message.id}
-          className="whitespace-pre-wrap text-sm bg-background border border-border rounded p-3 overflow-x-auto"
+          className={`flex ${
+            message.type === "human" ? "justify-end" : "justify-start"
+          }`}
         >
-          {message.content}
-        </pre>
+          <div
+            className={`rounded-lg p-3 ${
+              message.type === "human"
+                ? "max-w-[80%] bg-primary text-primary-foreground"
+                : "w-full bg-muted border border-border"
+            }`}
+          >
+            <pre className="whitespace-pre-wrap text-sm overflow-x-auto">
+              {message.content}
+            </pre>
+          </div>
+        </div>
       ))}
       <div ref={messageEndRef} />
     </div>
