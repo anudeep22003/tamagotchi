@@ -1,25 +1,35 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import io from "socket.io-client";
 import { BACKEND_URL } from "@/constants";
-import type { StreamingResponse } from "@/types/serverTypes";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
+import { useMessageStore } from "@/store/useMessageStore";
 
-interface UseSocketProps {
-  onChatStream: (data: StreamingResponse) => void;
-  onStreamChunk?: (envelope: Envelope<{ delta: string }>) => void;
-}
-
-export const useSocket = ({
-  onChatStream,
-  onStreamChunk,
-}: UseSocketProps) => {
+export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-  const emit = useCallback((event: string, data?: unknown) => {
-    socketRef.current?.emit(event, data);
-  }, []);
+  const updateStreamingMessage = useMessageStore(
+    (state) => state.updateStreamingMessage
+  );
+
+  const onStreamChunk = useCallback(
+    (envelope: Envelope<{ delta: string }>) => {
+      updateStreamingMessage(envelope);
+    },
+    [updateStreamingMessage]
+  );
+
+  const emit = useCallback(
+    (event: string, data?: unknown, ack?: (ack: string) => void) => {
+      if (ack) {
+        socketRef.current?.emit(event, data, ack);
+      } else {
+        socketRef.current?.emit(event, data);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const socket = io(BACKEND_URL, {
@@ -38,41 +48,22 @@ export const useSocket = ({
       setIsConnected(false);
     });
 
-    socket.on(
-      "receive_assistant_message",
-      (delta: { data: string }) => {
-        try {
-          const parsedData: StreamingResponse = JSON.parse(delta.data);
-          onChatStream(parsedData);
-        } catch (error) {
-          console.error("Error parsing chat stream data:", error);
-        }
+    socket.on("s2c.chat.stream.chunk", (rawMessage: string) => {
+      try {
+        const envelope: Envelope<{ delta: string }> =
+          JSON.parse(rawMessage);
+        onStreamChunk(envelope);
+      } catch (error) {
+        console.error("Error parsing stream chunk:", error, rawMessage);
       }
-    );
-
-    if (onStreamChunk) {
-      socket.on("s2c.chat.stream.chunk", (rawMessage: string) => {
-        try {
-          // Parse the raw message string
-          const envelope: Envelope<{ delta: string }> =
-            JSON.parse(rawMessage);
-          onStreamChunk(envelope);
-        } catch (error) {
-          console.error(
-            "Error parsing stream chunk:",
-            error,
-            rawMessage
-          );
-        }
-      });
-    }
+    });
 
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
     };
-  }, [onChatStream, onStreamChunk]);
+  }, [onStreamChunk]);
 
   return {
     isConnected,

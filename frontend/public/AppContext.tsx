@@ -5,18 +5,6 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useSocket } from "@/hooks/useSocket";
-import type {
-  SimpleResponse,
-  StreamingResponse,
-} from "@/types/serverTypes";
-import {
-  updateMessagesWithStreamData,
-  createHumanMessage,
-  returnUrlIfExists,
-  type Message,
-  prepareCodeMessage,
-} from "@/lib/messageUtils";
 import { Socket } from "socket.io-client";
 
 interface AppContextType {

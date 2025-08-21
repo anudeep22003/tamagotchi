@@ -85,7 +85,6 @@ export const useMessageStore = create<MessageState>()(
       },
       updateStreamingMessage: (envelope) => {
         set((state) => {
-          console.log("updateStreamingMessage", envelope);
           const { streamId } = envelope;
           const messageIndex = state.assistantMessages.findIndex(
             (message) => message.streamId === streamId

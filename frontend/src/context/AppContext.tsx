@@ -6,15 +6,6 @@ import {
   type ReactNode,
 } from "react";
 import { useSocket } from "@/hooks/useSocket";
-import type {
-  SimpleResponse,
-  StreamingResponse,
-} from "@/types/serverTypes";
-import // updateMessagesWithStreamData,
-// createHumanMessage,
-// returnUrlIfExists,
-// prepareCodeMessage,
-"@/lib/messageUtils";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
 import {
@@ -47,26 +38,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     (state) => state.createStreamMessage
   );
 
-  const handleChatStream = useCallback(
-    (data: StreamingResponse | SimpleResponse) => {
-      console.log("data", data);
-    },
-    []
-  );
-
-  // Create a stable stream chunk handler that doesn't cause re-renders
-  const handleStreamChunk = useCallback(
-    (envelope: Envelope<{ delta: string }>) => {
-      // Use the store directly to avoid dependency issues
-      useMessageStore.getState().updateStreamingMessage(envelope);
-    },
-    [] // No dependencies needed
-  );
-
-  const { isConnected, emit, socket } = useSocket({
-    onChatStream: handleChatStream,
-    onStreamChunk: handleStreamChunk,
-  });
+  const { isConnected, emit, socket } = useSocket();
 
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
@@ -90,13 +62,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     setInputText("");
 
-    socket?.emit("c2s.chat.stream.start", envelope, (ack: string) => {
+    emit("c2s.chat.stream.start", envelope, (ack: string) => {
       console.log("ack", ack);
       const ack_parsed: { streamId: string; requestId: string } =
         JSON.parse(ack);
       createStreamMessage(ack_parsed.streamId, ack_parsed.requestId);
     });
-  }, [inputText, emit, socket, createStreamMessage]);
+  }, [inputText, emit, createStreamMessage]);
 
   // Get messages from store
   const humanMessages = useMessageStore((state) => state.humanMessages);
