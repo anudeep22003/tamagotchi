@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
+import { useMessageStore } from "@/store/useMessageStore";
 import { Button } from "./ui/button";
 import type { GeneratedCode } from "@/types/serverTypes";
 import type { BaseMessage } from "@/store/useMessageStore";
@@ -26,7 +27,9 @@ const GenerativeMessage = ({ message }: { message: BaseMessage }) => {
 };
 
 const GenerativeMessageList = () => {
-  const { generativeMessages } = useAppContext();
+  const generativeMessages = useMessageStore(
+    (state) => state.codeMessages
+  );
   const generativeMessageRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -50,7 +53,10 @@ const GenerativeMessageList = () => {
 };
 
 const InstallAppControls = () => {
-  const { emit, generativeMessages } = useAppContext();
+  const { emit } = useAppContext();
+  const generativeMessages = useMessageStore(
+    (state) => state.codeMessages
+  );
 
   const hasCode = generativeMessages.length > 0;
   const lastGenerativeMessage = hasCode

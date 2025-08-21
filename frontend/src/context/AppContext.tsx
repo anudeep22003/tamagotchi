@@ -8,10 +8,7 @@ import {
 import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
 import type { Envelope } from "@/types/envelopeType";
-import {
-  useMessageStore,
-  type BaseMessage,
-} from "@/store/useMessageStore";
+import { useMessageStore } from "@/store/useMessageStore";
 
 interface AppContextType {
   inputText: string;
@@ -19,9 +16,6 @@ interface AppContextType {
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
   handleSendMessage: () => Promise<void>;
-  humanMessages: BaseMessage[];
-  humanAreaMessages: BaseMessage[];
-  generativeMessages: BaseMessage[];
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -70,15 +64,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [inputText, emit, createStreamMessage]);
 
-  // Get messages from store
-  const humanMessages = useMessageStore((state) => state.humanMessages);
-  const humanAreaMessages = useMessageStore(
-    (state) => state.humanAreaMessages
-  );
-  const generativeMessages = useMessageStore(
-    (state) => state.codeMessages
-  );
-
   return (
     <AppContext.Provider
       value={{
@@ -87,9 +72,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         showGenerative,
         setShowGenerative,
         handleSendMessage,
-        humanMessages,
-        humanAreaMessages,
-        generativeMessages,
         isConnected,
         emit,
         socket,
