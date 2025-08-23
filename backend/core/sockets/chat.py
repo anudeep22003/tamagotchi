@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import uuid
+from typing import Literal
 
 from pydantic import ValidationError
 
@@ -12,7 +13,7 @@ from .envelope_type import AckFail, AckOk, Envelope, Error
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-4o"
+MODEL: Literal["gpt-4o", "gpt-5"] = "gpt-4o"
 
 
 @sio.on("c2s.assistant.stream.start")
@@ -83,6 +84,7 @@ async def handle_chat_stream_start(
             validated_envelope.request_id,
             stream_id,
             actor="assistant",
+            model=MODEL,
         )
     )
 

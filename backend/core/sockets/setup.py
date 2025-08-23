@@ -1,11 +1,6 @@
 import logging
-import time
 
-from pydantic import ValidationError
-
-from . import async_openai_client, sio
-from .emitters import emit_chat_completion_chunk
-from .types import ChatRequest, Choice, ChoiceDelta, StreamingResponse
+from . import sio
 
 logger = logging.getLogger(__name__)
 

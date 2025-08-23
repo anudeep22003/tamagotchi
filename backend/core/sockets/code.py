@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Literal
 import uuid
 
 from pydantic import Field, ValidationError
@@ -23,7 +24,7 @@ async def test_code_event(sid: str, data: dict) -> None:
 active_connections: dict[str, dict] = {}
 
 
-MODEL = "gpt-5"
+MODEL: Literal["gpt-5", "gpt-4o"] = "gpt-5"
 
 
 class CodeRequest(AliasedBaseModel):
@@ -178,6 +179,7 @@ async def request_code_stream(sid: str, envelope: dict) -> str:
             validated_envelope.request_id,
             stream_id,
             actor="coder",
+            model=MODEL,
         )
     )
 

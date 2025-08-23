@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Literal
 
 from core.sockets.types import Message
 
@@ -7,7 +8,7 @@ from .envelope_type import Actor, Envelope
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-4o"
+MODELS = Literal["gpt-4o", "gpt-5"]
 
 
 async def stream_chunks(
@@ -16,12 +17,18 @@ async def stream_chunks(
     request_id: str,
     stream_id: str,
     actor: Actor,
+    model: MODELS,
 ):
+    kwargs: dict[str, Any] = {}
+    if model == "gpt-5":
+        kwargs["reasoning_effort"] = "high"
+    if model == "gpt-4o":
+        kwargs["temperature"] = 0.7
     stream = await async_openai_client.chat.completions.create(
-        model=MODEL,
+        model=model,
         messages=[msg.to_openai_message() for msg in data],
         stream=True,
-        # reasoning_effort="low",
+        **kwargs,
     )
 
     seq = 0
