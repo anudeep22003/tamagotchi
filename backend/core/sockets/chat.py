@@ -1,85 +1,135 @@
+import asyncio
 import logging
-import time
+import uuid
 
 from pydantic import ValidationError
 
+from core.sockets.types import Message
+
 from . import async_openai_client, sio
-from .emitters import emit_chat_completion_chunk
-from .types import ChatRequest, Choice, ChoiceDelta, StreamingResponse
+from .envelope_type import AckFail, AckOk, Envelope, Error
 
 logger = logging.getLogger(__name__)
-
-active_connections: dict[str, dict] = {}
-
 
 MODEL = "gpt-5"
 
 
-@sio.event
-async def connect(sid: str, environ: dict) -> None:
-    print("connection established")
-    print(f"# of active connections: {len(active_connections)}")
-    active_connections[sid] = environ
+@sio.on("c2s.assistant.stream.start")
+async def handle_chat_stream_start(
+    sid: str,
+    envelope: dict,
+) -> str:
+    """
+    Sequence of events:
+    - client sends a c2s.assistant.stream.start event with:
+        - a request_id
+        - the data that is the input by the user
+    - the server acknowledges this and also sends a server minted stream_id
+    - server starts streaming chunks to the client via s2c.assistant.stream.chunk
+    - client accumulates the chunks on the client side
+    - server sends a s2c.assistant.stream.end event
+    """
+    try:
+        validated_envelope = Envelope.model_validate(envelope)
+        logger.info(
+            f"Envelope received in the correct format: {validated_envelope.model_dump_json()}"
+        )
+        if validated_envelope.request_id is None:
+            return AckFail(
+                ok=False,
+                error=Error(
+                    code="invalid_envelope",
+                    message="The envelope is missing request_id",
+                ),
+            ).model_dump_json()
+    except ValidationError:
+        return AckFail(
+            ok=False,
+            error=Error(
+                code="invalid_envelope",
+                message="The envelope is not in the correct format",
+            ),
+        ).model_dump_json()
 
+    try:
+        # validated_data = Data.model_validate(validated_envelope.data)
+        if isinstance(validated_envelope.data, list):
+            validated_data = [
+                Message.model_validate(msg) for msg in validated_envelope.data
+            ]
+    except ValidationError:
+        return AckFail(
+            ok=False,
+            error=Error(
+                code="invalid_data", message="The data is not in the correct format"
+            ),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return AckFail(
+            ok=False,
+            error=Error(code="internal_error", message="An unexpected error occurred"),
+        ).model_dump_json()
 
-@sio.event
-async def hello(sid: str, message: str) -> None:
-    print(f"{sid}, {message}")
-    await sio.emit(
-        "hello",
-        "number of active connections: " + str(len(active_connections)),
-        to=sid,
+    # if everything is fine, mint a stream_id and send ack
+    stream_id = str(uuid.uuid4())
+
+    # start streaming task
+    asyncio.create_task(
+        stream_chunks(sid, validated_data, validated_envelope.request_id, stream_id)
     )
 
+    return AckOk(
+        ok=True,
+        request_id=validated_envelope.request_id,
+        stream_id=stream_id,
+    ).model_dump_json()
 
-@sio.event
-async def disconnect(sid: str) -> None:
-    print(f"connection closed {sid}")
-    del active_connections[sid]
 
+async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_id: str):
+    stream = await async_openai_client.chat.completions.create(
+        model=MODEL,
+        messages=[msg.to_openai_message() for msg in data],
+        stream=True,
+        reasoning_effort="low",
+    )
 
-@sio.event
-async def request_chat_stream(sid: str, messages: dict) -> None:
-    logger.info(f"request_chat_stream {sid}")
-    try:
-        validated_chat_request = ChatRequest.model_validate(messages)
-        messages_to_load = [
-            msg.to_openai_message() for msg in validated_chat_request.messages
-        ]
-    except ValidationError as e:
-        print(f"Error: {e}")
-        return
-    try:
-        stream = await async_openai_client.chat.completions.create(
-            model=MODEL,
-            messages=messages_to_load,
-            stream=True,
-            # temperature=0.7,
-            reasoning_effort="low",
-        )
-
-        async for chunk in stream:
-            await emit_chat_completion_chunk(
-                sio, sid, chunk, "receive_assistant_message"
+    seq = 0
+    async for chunk in stream:
+        seq += 1
+        if chunk.choices[0].delta.content is not None:
+            envelope_to_send = Envelope(
+                request_id=request_id,
+                stream_id=stream_id,
+                seq=seq,
+                direction="s2c",
+                actor="assistant",
+                action="stream",
+                modifier="chunk",
+                data={
+                    "delta": chunk.choices[0].delta.content,
+                },
             )
-    except Exception as e:
-        print(f"Error: {e}")
-        error_response = StreamingResponse(
-            id=f"chatcmpl-{int(time.time())}",
-            created=int(time.time()),
-            model=MODEL,
-            choices=[
-                Choice(
-                    index=0,
-                    delta=ChoiceDelta(content=f"Error: {str(e)}"),
-                    finish_reason="error",
-                )
-            ],
-        )
-        await sio.emit(
-            "chat_stream",
-            {
-                "data": error_response.model_dump_json(by_alias=True),
-            },
-            to=sid,
-        )
+            await sio.emit(
+                "s2c.assistant.stream.chunk",
+                envelope_to_send.model_dump_json(),
+                to=sid,
+            )
+        elif chunk.choices[0].finish_reason is not None:
+            envelope_to_send = Envelope(
+                request_id=request_id,
+                stream_id=stream_id,
+                seq=seq,
+                direction="s2c",
+                actor="assistant",
+                action="stream",
+                modifier="end",
+                data={
+                    "finish_reason": chunk.choices[0].finish_reason,
+                },
+            )
+            await sio.emit(
+                "s2c.assistant.stream.end",
+                envelope_to_send.model_dump_json(),
+                to=sid,
+            )
