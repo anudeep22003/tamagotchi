@@ -12,9 +12,9 @@ This project consists of two powerful components:
 
 ### 🚀 **App Creation & Launch**
 Build applications with GPT-5 and advanced reasoning support, then configure them to run whenever you need them. The system uses a dual-pane interface where you collaborate with AI in real-time:
-- **Human Area** (left): Your input, requirements, and iterations
-- **Generative Area** (right): AI-powered app construction and live preview
-- **Socket streaming**: Watch your apps come to life as GPT-5 builds them
+- **Human Area** (left): Your input, requirements, and iterations with markdown rendering
+- **Generative Area** (right): AI-powered app construction with syntax highlighting
+- **Envelope-based protocol**: Typed websocket communication with acknowledgments and streaming
 
 ### 📊 **Personal Data Repository**
 A Chrome extension that intelligently captures your digital footprint into your own private data vault:
@@ -30,37 +30,39 @@ A Chrome extension that intelligently captures your digital footprint into your 
 │     Frontend    │    │     Backend      │    │   Chrome Ext    │
 │   (React/Vite)  │◄──►│  (FastAPI/Socket)│◄──►│  (React/CRXJS)  │
 │                 │    │                  │    │                 │
-│ • App Store UI  │    │ • Socket streams │    │ • DOM capture   │
-│ • Live building │    │ • GPT-5 integration│  │ • Data parsing  │
-│ • Chat interface│    │ • Data ingestion │    │ • API intercept │
+│ • Message Store │    │ • Envelope Protocol│   │ • DOM capture   │
+│ • Markdown UI   │    │ • Stream handling│    │ • Data parsing  │
+│ • Code preview  │    │ • GPT-5 integration│  │ • API intercept │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
 ## Key Features
 
-- **Real-time App Generation**: Watch GPT-5 build complete applications with reasoning support
-- **Personal Data Integration**: Your apps work with your actual data from day one
-- **Privacy-First**: All data stays in your control and storage
-- **Extensible Platform**: Easy to add new data sources and app types
-- **Live Preview**: See apps being built and test them immediately
-- **Socket Streaming**: Real-time communication between all components
+- **Envelope Protocol**: Structured websocket communication with request/response correlation
+- **Stream Management**: Server-minted stream IDs with sequential message ordering
+- **State Management**: Zustand-based message store with type-safe message handling
+- **Rich UI**: Markdown rendering with syntax highlighting for code blocks
+- **Real-time Streaming**: Chunked message delivery with acknowledgment system
+- **Modular Architecture**: Separated concerns for chat, code generation, and data handling
 
 ## Tech Stack
 
 ### Backend (`/backend`)
 - **FastAPI**: High-performance API framework
-- **Socket.IO**: Real-time bidirectional communication
+- **Socket.IO**: Envelope-based websocket protocol
 - **OpenAI GPT-5**: Advanced reasoning and app generation
-- **Pydantic**: Type-safe data validation
+- **Pydantic**: Type-safe envelope and message validation
 - **Python 3.12+**: Modern Python with full typing
 
 ### Frontend (`/frontend`)
 - **React 19**: Latest React with concurrent features
-- **Socket.IO Client**: Real-time updates and streaming
+- **Socket.IO Client**: Typed envelope communication
 - **Shadcn/UI**: Beautiful, accessible components
 - **TailwindCSS**: Utility-first styling
 - **React Router**: Multi-app navigation
-- **Zustand**: Lightweight state management
+- **Zustand**: Centralized message store
+- **React Markdown**: Rich text rendering with GFM support
+- **Syntax Highlighter**: Code highlighting for multiple languages
 
 ### Chrome Extension (`/extension`)
 - **Manifest V3**: Latest Chrome extension standard
@@ -142,14 +144,30 @@ OPENAI_API_KEY=your_openai_api_key_here
 3. Get insights powered by your actual social media data
 4. Build custom analytics apps based on these insights
 
+## WebSocket Protocol
+
+The system uses an envelope-based protocol for all websocket communication:
+
+### Message Flow
+1. Client sends `c2s.{actor}.stream.start` with request envelope
+2. Server validates and acknowledges with stream ID
+3. Server streams `s2c.{actor}.stream.chunk` messages
+4. Server completes with `s2c.{actor}.stream.end`
+
+### Envelope Structure
+- **Protocol version**: v1
+- **Correlation IDs**: request_id, stream_id, sequence number
+- **Message routing**: direction, actor, action, modifier
+- **Type safety**: Full validation on both ends
+
 ## Development
 
 The project follows modern development practices:
-- **Type Safety**: Full TypeScript/Python typing
+- **Type Safety**: Full TypeScript/Python typing with envelope validation
 - **Component Architecture**: Reusable, composable components
-- **Real-time Updates**: Socket-based streaming throughout
-- **Modern Tooling**: Latest build tools and frameworks
-- **Privacy by Design**: Local-first data storage
+- **State Management**: Centralized Zustand store with typed messages
+- **Modern Tooling**: Vite, Bun, UV for fast development
+- **Performance**: Memoized rendering, optimized message handling
 
 ### Adding New Data Sources
 1. Create adapter in extension (`/extension/src/config/`)
