@@ -6,7 +6,7 @@ from pydantic.alias_generators import to_camel
 
 
 class Message(BaseModel):
-    role: Literal["user", "assistant", "human", "generative"]
+    role: Literal["user", "assistant", "human", "generative", "system"]
     content: str
 
     def to_openai_message(

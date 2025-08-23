@@ -13,7 +13,10 @@ import {
   useMessageStore,
   type TypedMessage,
 } from "@/store/useMessageStore";
-import { constructChatStreamMessages } from "@/lib/messageUtils";
+import {
+  constructChatStreamMessages,
+  prepareCodeMessage,
+} from "@/lib/messageUtils";
 
 interface AppContextType {
   inputText: string;
@@ -56,20 +59,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const messagesToSend =
       constructChatStreamMessages(humanAreaMessages);
 
-    const data: ServerFormattedMessage[] = [
-      ...messagesToSend,
-      {
-        role: "user",
-        content: inputText,
-      },
-    ];
-
-    type ServerFormattedMessage = {
-      role: string;
-      content: string;
+    const data = (await prepareCodeMessage(inputText)) as CodeMessage;
+    type CodeMessage = {
+      query: string;
+      context: string;
+      packages: string;
+      components: string;
     };
 
-    const envelope: Envelope<ServerFormattedMessage[]> = {
+    // type ServerFormattedMessage = {
+    //   role: string;
+    //   content: string;
+    // };
+
+    const actor = "coder";
+
+    // const envelope: Envelope<ServerFormattedMessage[]> = {
+    const envelope: Envelope<CodeMessage> = {
       v: "1",
       id: `human-${Date.now()}`,
       ts: new Date().getTime(),
@@ -77,21 +83,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       requestId: crypto.randomUUID(),
 
       direction: "c2s",
-      actor: "assistant",
+      actor,
       action: "stream",
       modifier: "start",
       data,
     };
     setInputText("");
 
-    emit("c2s.assistant.stream.start", envelope, (ack: string) => {
+    emit(`c2s.${actor}.stream.start`, envelope, (ack: string) => {
       console.log("ack", ack);
       const ack_parsed: { streamId: string; requestId: string } =
         JSON.parse(ack);
       createStreamMessage(
         ack_parsed.streamId,
         ack_parsed.requestId,
-        "assistant"
+        actor
       );
     });
   }, [
