@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useHumanAreaMessages } from "@/store/useMessageStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { MessageInput } from "./MessageInput";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
@@ -21,33 +21,38 @@ const MessageList = () => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const messagesLength = humanAreaMessages.length;
   useEffect(() => {
     scrollToBottom();
+  }, [messagesLength]);
+
+  const memoizedMessages = useMemo(() => {
+    return humanAreaMessages.map((message) => (
+      <div
+        key={message.id}
+        className={`flex ${
+          message.type === "human" ? "justify-end" : "justify-start"
+        }`}
+      >
+        <div
+          className={`rounded-lg p-3 ${
+            message.type === "human"
+              ? "max-w-[80%] bg-primary text-primary-foreground"
+              : "w-full bg-muted/50 border border-border"
+          }`}
+        >
+          <MarkdownRenderer 
+            content={message.content} 
+            className="text-sm"
+          />
+        </div>
+      </div>
+    ));
   }, [humanAreaMessages]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {humanAreaMessages.map((message) => (
-        <div
-          key={message.id}
-          className={`flex ${
-            message.type === "human" ? "justify-end" : "justify-start"
-          }`}
-        >
-          <div
-            className={`rounded-lg p-3 ${
-              message.type === "human"
-                ? "max-w-[80%] bg-primary text-primary-foreground"
-                : "w-full bg-muted/50 border border-border"
-            }`}
-          >
-            <MarkdownRenderer 
-              content={message.content} 
-              className="text-sm"
-            />
-          </div>
-        </div>
-      ))}
+      {memoizedMessages}
       <div ref={messageEndRef} />
     </div>
   );

@@ -2,14 +2,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import mermaid from "mermaid";
 import type { Components } from "react-markdown";
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
-  variant?: "human" | "assistant" | "code";
 }
 
 mermaid.initialize({
@@ -28,26 +27,39 @@ mermaid.initialize({
 
 const MermaidDiagram = ({ code }: { code: string }) => {
   const [svg, setSvg] = useState<string>("");
-  const mermaidId = useRef(`mermaid-${Date.now()}-${Math.random()}`);
+  const mermaidId = useMemo(() => `mermaid-${Date.now()}-${Math.random()}`, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const renderDiagram = async () => {
       try {
-        const { svg } = await mermaid.render(mermaidId.current, code);
-        setSvg(svg);
+        const { svg } = await mermaid.render(mermaidId, code);
+        if (isMounted) {
+          setSvg(svg);
+        }
       } catch (error) {
         console.error("Failed to render mermaid diagram:", error);
       }
     };
     renderDiagram();
-  }, [code]);
+    
+    return () => {
+      isMounted = false;
+      // Cleanup any mermaid DOM nodes
+      const element = document.getElementById(mermaidId);
+      if (element) {
+        element.remove();
+      }
+    };
+  }, [code, mermaidId]);
 
   if (!svg) return <div className="text-muted-foreground">Loading diagram...</div>;
   
   return <div dangerouslySetInnerHTML={{ __html: svg }} className="mermaid-container" />;
 };
 
-export const MarkdownRenderer = ({ content, className = "", variant = "assistant" }: MarkdownRendererProps) => {
+export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererProps) => {
   const processedContent = content || "";
   
   const isIncompleteCodeBlock = (text: string) => {

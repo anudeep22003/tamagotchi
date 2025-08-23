@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, memo } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useCodeMessages } from "@/store/useMessageStore";
 import { Button } from "./ui/button";
@@ -14,7 +14,7 @@ const GenerativeHeader = () => {
   );
 };
 
-const GenerativeMessage = ({ message }: { message: BaseMessage }) => {
+const GenerativeMessage = memo(({ message }: { message: BaseMessage }) => {
   return (
     <div className="bg-secondary/10 rounded-lg p-4 border border-border">
       <MarkdownRenderer 
@@ -23,7 +23,7 @@ const GenerativeMessage = ({ message }: { message: BaseMessage }) => {
       />
     </div>
   );
-};
+});
 
 const GenerativeMessageList = () => {
   const generativeMessages = useCodeMessages();
@@ -35,15 +35,20 @@ const GenerativeMessageList = () => {
     });
   };
 
+  const messagesLength = generativeMessages.length;
   useEffect(() => {
     scrollToBottom();
+  }, [messagesLength]);
+
+  const memoizedMessages = useMemo(() => {
+    return generativeMessages.map((message) => (
+      <GenerativeMessage key={message.id} message={message} />
+    ));
   }, [generativeMessages]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {generativeMessages.map((message) => (
-        <GenerativeMessage key={message.id} message={message} />
-      ))}
+      {memoizedMessages}
       <div ref={generativeMessageRef} />
     </div>
   );

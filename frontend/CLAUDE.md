@@ -24,3 +24,5 @@ Use good coding principles, and good ui design principles:
 - All names should be descriptive and meaningful and read like elegant prose in the stacktrace
 - Use the most specific type possible, try your hardest not to use `Any`
 - files should not be longer than 200 lines of code
+
+- I use bun for packlage management

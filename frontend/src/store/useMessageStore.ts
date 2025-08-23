@@ -30,6 +30,7 @@ interface MessageState {
   updateStreamingMessage: (
     envelope: Envelope<{ delta: string }>
   ) => void;
+  clearOldMessages: () => void;
 }
 
 export const useMessageStore = create<MessageState>()(
@@ -79,10 +80,27 @@ export const useMessageStore = create<MessageState>()(
           return { ...state, allMessages: updatedMessages };
         });
       },
+      clearOldMessages: () => {
+        set((state) => {
+          // Keep only the last 100 messages to prevent memory overflow
+          const maxMessages = 100;
+          if (state.allMessages.length > maxMessages) {
+            return {
+              ...state,
+              allMessages: state.allMessages.slice(-maxMessages)
+            };
+          }
+          return state;
+        });
+      },
     }),
 
     {
       name: "message-storage",
+      partialize: (state: MessageState) => ({
+        // Don't persist all messages to reduce memory usage
+        allMessages: state.allMessages.slice(-50)
+      })
     }
   )
 );
