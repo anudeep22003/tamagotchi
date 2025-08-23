@@ -21,7 +21,6 @@ export const sendCodeMessage = async (
     actor: Actor
   ) => void
 ) => {
-  if (!inputText.trim()) return;
 
   const humanMessage: TypedMessage = {
     id: `human-${Date.now()}`,
@@ -31,8 +30,14 @@ export const sendCodeMessage = async (
   };
 
   addMessage(humanMessage);
+  const history = constructChatStreamMessages(humanAreaMessages);
 
-  const data = await prepareCodeMessage(inputText);
+  const codeRequest = await prepareCodeMessage(inputText);
+
+  const data = {
+    history,
+    codeRequest,
+  };
 
   const envelope: Envelope<typeof data> = {
     v: "1",
@@ -73,7 +78,7 @@ export const sendChatMessage = async (
   createStreamMessage: (
     streamId: string,
     requestId: string,
-    actor: string
+    actor: Actor
   ) => void
 ) => {
   if (!inputText.trim()) return;
@@ -87,7 +92,13 @@ export const sendChatMessage = async (
 
   addMessage(humanMessage);
 
-  const messagesToSend = constructChatStreamMessages(humanAreaMessages);
+  const messagesToSend = [
+    ...constructChatStreamMessages(humanAreaMessages),
+    {
+      role: "user",
+      content: inputText,
+    },
+  ];
 
   const envelope: Envelope<typeof messagesToSend> = {
     v: "1",

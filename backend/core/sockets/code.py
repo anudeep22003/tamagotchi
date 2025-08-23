@@ -2,10 +2,10 @@ import asyncio
 import logging
 import uuid
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 from . import sio
-from .envelope_type import AckFail, AckOk, Envelope, Error
+from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from .openai_streamer import stream_chunks
 from .types import Message
 
@@ -26,7 +26,7 @@ active_connections: dict[str, dict] = {}
 MODEL = "gpt-5"
 
 
-class CodeRequest(BaseModel):
+class CodeRequest(AliasedBaseModel):
     query: str = Field(description="The app that the user wants to generate")
     context: str = Field(description="The react context available to the app")
     packages: str = Field(description="The package.json file")
@@ -101,6 +101,16 @@ class CodeRequest(BaseModel):
         return messages
 
 
+class HistoricCodeRequest(AliasedBaseModel):
+    history: list[Message] = Field(
+        description="The conversation history between the user and the assistant so far"
+    )
+    code_request: CodeRequest = Field(description="The code request")
+
+    def to_openai_messages(self) -> list[Message]:
+        return self.code_request.to_openai_messages() + self.history
+
+
 @sio.on("c2s.coder.stream.start")
 async def request_code_stream(sid: str, envelope: dict) -> str:
     print(
@@ -126,8 +136,29 @@ async def request_code_stream(sid: str, envelope: dict) -> str:
                     message="The envelope is missing data",
                 ),
             ).model_dump_json()
-        validated_code_request = CodeRequest.model_validate(validated_envelope.data)
-        messages_to_load = validated_code_request.to_openai_messages()
+        validated_historic_code_request = HistoricCodeRequest.model_validate(
+            validated_envelope.data
+        )
+        if validated_historic_code_request.code_request is None:
+            return AckFail(
+                ok=False,
+                error=Error(
+                    code="invalid_envelope",
+                    message="The envelope is missing code context",
+                ),
+            ).model_dump_json()
+        validated_history = [
+            Message.model_validate(h) for h in validated_historic_code_request.history
+        ]
+        validated_historic_code_request.history = validated_history
+        validated_code_request = CodeRequest.model_validate(
+            validated_historic_code_request.code_request
+        )
+        full_code_request = HistoricCodeRequest(
+            history=validated_history,
+            code_request=validated_code_request,
+        )
+        messages_to_load = full_code_request.to_openai_messages()
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
         logger.error(f"Validation error details: {e.errors()}")

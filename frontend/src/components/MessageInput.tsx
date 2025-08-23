@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useRef, useEffect } from "react";
 
 export const MessageInput = () => {
-  const { inputText, setInputText, handleSendMessage } = useAppContext();
+  const { inputText, setInputText, handleInputSendClick } = useAppContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -30,14 +30,14 @@ export const MessageInput = () => {
         onChange={handleInputChange}
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-            handleSendMessage();
+            handleInputSendClick();
           }
         }}
         placeholder="Type your message..."
         className="flex-1 px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none overflow-hidden min-h-[40px]"
         rows={1}
       />
-      <Button onClick={handleSendMessage} size="sm">
+      <Button onClick={handleInputSendClick} size="sm">
         Send
       </Button>
     </div>

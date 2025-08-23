@@ -11,14 +11,18 @@ import {
   useHumanAreaMessages,
   useMessageStore,
 } from "@/store/useMessageStore";
-import { sendCodeMessage } from "@/lib/messageSendHandlers";
+import {
+  sendChatMessage,
+  sendCodeMessage,
+} from "@/lib/messageSendHandlers";
 
 interface AppContextType {
   inputText: string;
   setInputText: (inputText: string) => void;
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
-  handleSendMessage: () => Promise<void>;
+  handleInputSendClick: () => Promise<void>;
+  handleCodeSendClick: () => Promise<void>;
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -39,8 +43,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const { isConnected, emit, socket } = useSocket();
 
-  const handleSendMessage = useCallback(async () => {
+  const handleCodeSendClick = useCallback(async () => {
     await sendCodeMessage(
+      inputText,
+      setInputText,
+      emit,
+      addMessage,
+      humanAreaMessages,
+      createStreamMessage
+    );
+  }, [
+    inputText,
+    setInputText,
+    emit,
+    addMessage,
+    humanAreaMessages,
+    createStreamMessage,
+  ]);
+
+  const handleInputSendClick = useCallback(async () => {
+    await sendChatMessage(
       inputText,
       setInputText,
       emit,
@@ -64,7 +86,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setInputText,
         showGenerative,
         setShowGenerative,
-        handleSendMessage,
+        handleCodeSendClick,
+        handleInputSendClick,
         isConnected,
         emit,
         socket,

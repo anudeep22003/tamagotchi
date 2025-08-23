@@ -52,7 +52,8 @@ const MessageList = () => {
 };
 
 const RecordingControls = () => {
-  const { showGenerative, setShowGenerative } = useAppContext();
+  const { showGenerative, setShowGenerative, handleCodeSendClick } =
+    useAppContext();
 
   const handleToggleGenerative = () => {
     setShowGenerative(!showGenerative);
@@ -60,8 +61,11 @@ const RecordingControls = () => {
 
   return (
     <div className="flex gap-2">
-      <Button variant="outline" size="sm">
+      {/* <Button variant="outline" size="sm">
         Record
+      </Button> */}
+      <Button variant="outline" size="sm" onClick={handleCodeSendClick}>
+        Code
       </Button>
       <div className="md:hidden flex-1">
         <Button
