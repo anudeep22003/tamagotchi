@@ -120,7 +120,7 @@ async def request_code_stream(sid: str, envelope: dict) -> str:
     logger.info(f"request_code_stream {sid}")
 
     try:
-        validated_envelope = Envelope.model_validate(envelope)
+        validated_envelope = Envelope[HistoricCodeRequest].model_validate(envelope)
         if validated_envelope.request_id is None:
             return AckFail(
                 ok=False,

@@ -32,7 +32,7 @@ async def handle_chat_stream_start(
     - server sends a s2c.assistant.stream.end event
     """
     try:
-        validated_envelope = Envelope.model_validate(envelope)
+        validated_envelope = Envelope[list[Message]].model_validate(envelope)
         logger.info(
             f"Envelope received in the correct format: {validated_envelope.model_dump_json()}"
         )

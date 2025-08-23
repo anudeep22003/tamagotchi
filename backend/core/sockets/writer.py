@@ -25,7 +25,7 @@ async def request_writer_stream(sid: str, envelope: dict) -> str:
     print(f"DEBUG: request_writer_stream handler called with sid={sid}")
     logger.info(f"request_writer_stream {sid}")
     try:
-        validated_envelope = Envelope.model_validate(envelope)
+        validated_envelope = Envelope[WriterRequest].model_validate(envelope)
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
         logger.error(f"Validation error details: {e.errors()}")

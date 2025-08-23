@@ -1,11 +1,9 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
-
-from core.sockets.types import Message
 
 
 class AliasedBaseModel(BaseModel):
@@ -37,8 +35,10 @@ Actor = Literal["assistant", "coder", "writer"]
 Action = Literal["stream"]
 Modifier = Literal["start", "chunk", "end"]
 
+T = TypeVar("T")
 
-class Envelope(AliasedBaseModel):
+
+class Envelope(Generic[T], AliasedBaseModel):
     # protocol
     v: str = "1"
 
@@ -60,7 +60,7 @@ class Envelope(AliasedBaseModel):
     modifier: Modifier
 
     # payload
-    data: dict | list[Message]
+    data: T
 
     # errors
     error: ErrorDetails | None = None
