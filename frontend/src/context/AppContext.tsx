@@ -7,16 +7,11 @@ import {
 } from "react";
 import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
-import type { Envelope } from "@/types/envelopeType";
 import {
   useHumanAreaMessages,
   useMessageStore,
-  type TypedMessage,
 } from "@/store/useMessageStore";
-import {
-  constructChatStreamMessages,
-  prepareCodeMessage,
-} from "@/lib/messageUtils";
+import { sendCodeMessage } from "@/lib/messageSendHandlers";
 
 interface AppContextType {
   inputText: string;
@@ -45,67 +40,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { isConnected, emit, socket } = useSocket();
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputText.trim()) return;
-
-    const humanMessage: TypedMessage = {
-      id: `human-${Date.now()}`,
-      ts: new Date().getTime(),
-      content: inputText,
-      type: "human",
-    };
-
-    addMessage(humanMessage);
-
-    const messagesToSend =
-      constructChatStreamMessages(humanAreaMessages);
-
-    const data = (await prepareCodeMessage(inputText)) as CodeMessage;
-    type CodeMessage = {
-      query: string;
-      context: string;
-      packages: string;
-      components: string;
-    };
-
-    // type ServerFormattedMessage = {
-    //   role: string;
-    //   content: string;
-    // };
-
-    const actor = "coder";
-
-    // const envelope: Envelope<ServerFormattedMessage[]> = {
-    const envelope: Envelope<CodeMessage> = {
-      v: "1",
-      id: `human-${Date.now()}`,
-      ts: new Date().getTime(),
-
-      requestId: crypto.randomUUID(),
-
-      direction: "c2s",
-      actor,
-      action: "stream",
-      modifier: "start",
-      data,
-    };
-    setInputText("");
-
-    emit(`c2s.${actor}.stream.start`, envelope, (ack: string) => {
-      console.log("ack", ack);
-      const ack_parsed: { streamId: string; requestId: string } =
-        JSON.parse(ack);
-      createStreamMessage(
-        ack_parsed.streamId,
-        ack_parsed.requestId,
-        actor
-      );
-    });
+    await sendCodeMessage(
+      inputText,
+      setInputText,
+      emit,
+      addMessage,
+      humanAreaMessages,
+      createStreamMessage
+    );
   }, [
     inputText,
+    setInputText,
     emit,
-    createStreamMessage,
     addMessage,
     humanAreaMessages,
+    createStreamMessage,
   ]);
 
   return (

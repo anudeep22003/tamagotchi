@@ -5,21 +5,22 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { useSocket } from "@/hooks/useSocket";
 import { Socket } from "socket.io-client";
+import type { Envelope } from "@/types/envelopeType";
+import {
+  useHumanAreaMessages,
+  useMessageStore,
+  type TypedMessage,
+} from "@/store/useMessageStore";
+import { constructChatStreamMessages } from "@/lib/messageUtils";
 
 interface AppContextType {
-  messages: Message[];
-  setMessages: (
-    messages: Message[] | ((prev: Message[]) => Message[])
-  ) => void;
   inputText: string;
   setInputText: (inputText: string) => void;
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
   handleSendMessage: () => Promise<void>;
-  humanMessages: Message[];
-  humanAreaMessages: Message[];
-  generativeMessages: Message[];
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -28,73 +29,87 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [showGenerative, setShowGenerative] = useState(false);
 
-  const handleChatStream = useCallback(
-    (data: StreamingResponse | SimpleResponse) => {
-      setMessages((prev) => updateMessagesWithStreamData(prev, data));
-    },
-    []
+  // Get store functions
+  const createStreamMessage = useMessageStore(
+    (state) => state.createStreamMessage
   );
+  const addMessage = useMessageStore((state) => state.addMessage);
+  const humanAreaMessages = useHumanAreaMessages();
 
-  const { isConnected, emit, socket } = useSocket({
-    onChatStream: handleChatStream,
-  });
+  const { isConnected, emit, socket } = useSocket();
 
   const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
-    const newMessage = createHumanMessage(inputText);
-    setMessages((prev) => [...prev, newMessage]);
-    setInputText("");
+    const humanMessage: TypedMessage = {
+      id: `human-${Date.now()}`,
+      ts: new Date().getTime(),
+      content: inputText,
+      type: "human",
+    };
 
-    const messagesToSend = [
-      ...messages.map((m) => ({
-        role: m.type,
-        content: m.content,
-      })),
+    addMessage(humanMessage);
+
+    const messagesToSend =
+      constructChatStreamMessages(humanAreaMessages);
+
+    const data: ServerFormattedMessage[] = [
+      ...messagesToSend,
       {
-        role: "human",
+        role: "user",
         content: inputText,
       },
     ];
 
-    const url = returnUrlIfExists(inputText);
+    type ServerFormattedMessage = {
+      role: string;
+      content: string;
+    };
 
-    if (url) {
-      emit("request_url_stream", url);
-    } else {
-      // emit("request_chat_stream", {
-      //   messages: messagesToSend,
-      // });
-      const codeMessage = await prepareCodeMessage(inputText);
-      emit("request_code_stream", codeMessage);
-    }
-  }, [inputText, emit, messages]);
+    const envelope: Envelope<ServerFormattedMessage[]> = {
+      v: "1",
+      id: `human-${Date.now()}`,
+      ts: new Date().getTime(),
 
-  const humanMessages = messages.filter((m) => m.type === "human");
-  const humanAreaMessages = messages.filter(
-    (m) => m.type === "human" || m.type === "assistant"
-  );
-  const generativeMessages = messages.filter(
-    (m) => m.type === "generative"
-  );
+      requestId: crypto.randomUUID(),
+
+      direction: "c2s",
+      actor: "coder",
+      action: "stream",
+      modifier: "start",
+      data,
+    };
+    setInputText("");
+
+    emit("c2s.coder.stream.start", envelope, (ack: string) => {
+      console.log("ack", ack);
+      const ack_parsed: { streamId: string; requestId: string } =
+        JSON.parse(ack);
+      createStreamMessage(
+        ack_parsed.streamId,
+        ack_parsed.requestId,
+        "assistant"
+      );
+    });
+  }, [
+    inputText,
+    emit,
+    createStreamMessage,
+    addMessage,
+    humanAreaMessages,
+  ]);
 
   return (
     <AppContext.Provider
       value={{
-        messages,
-        setMessages,
         inputText,
         setInputText,
         showGenerative,
         setShowGenerative,
         handleSendMessage,
-        humanMessages,
-        humanAreaMessages,
-        generativeMessages,
         isConnected,
         emit,
         socket,
