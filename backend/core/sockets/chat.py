@@ -4,14 +4,15 @@ import uuid
 
 from pydantic import ValidationError
 
+from core.sockets.openai_streamer import stream_chunks
 from core.sockets.types import Message
 
-from . import async_openai_client, sio
+from . import sio
 from .envelope_type import AckFail, AckOk, Envelope, Error
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-5"
+MODEL = "gpt-4o"
 
 
 @sio.on("c2s.assistant.stream.start")
@@ -76,7 +77,13 @@ async def handle_chat_stream_start(
 
     # start streaming task
     asyncio.create_task(
-        stream_chunks(sid, validated_data, validated_envelope.request_id, stream_id)
+        stream_chunks(
+            sid,
+            validated_data,
+            validated_envelope.request_id,
+            stream_id,
+            actor="assistant",
+        )
     )
 
     return AckOk(
@@ -84,52 +91,3 @@ async def handle_chat_stream_start(
         request_id=validated_envelope.request_id,
         stream_id=stream_id,
     ).model_dump_json()
-
-
-async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_id: str):
-    stream = await async_openai_client.chat.completions.create(
-        model=MODEL,
-        messages=[msg.to_openai_message() for msg in data],
-        stream=True,
-        reasoning_effort="low",
-    )
-
-    seq = 0
-    async for chunk in stream:
-        seq += 1
-        if chunk.choices[0].delta.content is not None:
-            envelope_to_send = Envelope(
-                request_id=request_id,
-                stream_id=stream_id,
-                seq=seq,
-                direction="s2c",
-                actor="assistant",
-                action="stream",
-                modifier="chunk",
-                data={
-                    "delta": chunk.choices[0].delta.content,
-                },
-            )
-            await sio.emit(
-                "s2c.assistant.stream.chunk",
-                envelope_to_send.model_dump_json(),
-                to=sid,
-            )
-        elif chunk.choices[0].finish_reason is not None:
-            envelope_to_send = Envelope(
-                request_id=request_id,
-                stream_id=stream_id,
-                seq=seq,
-                direction="s2c",
-                actor="assistant",
-                action="stream",
-                modifier="end",
-                data={
-                    "finish_reason": chunk.choices[0].finish_reason,
-                },
-            )
-            await sio.emit(
-                "s2c.assistant.stream.end",
-                envelope_to_send.model_dump_json(),
-                to=sid,
-            )

@@ -32,6 +32,12 @@ class ErrorDetails(AliasedBaseModel):
     details: dict | None = None
 
 
+Direction = Literal["c2s", "s2c"]
+Actor = Literal["assistant", "coder"]
+Action = Literal["stream"]
+Modifier = Literal["start", "chunk", "end"]
+
+
 class Envelope(AliasedBaseModel):
     # protocol
     v: str = "1"
@@ -48,10 +54,10 @@ class Envelope(AliasedBaseModel):
     seq: int | None = None  # per-stream sequence, starting at 1
 
     # control
-    direction: Literal["c2s", "s2c"]
-    actor: Literal["assistant", "coder"]
-    action: Literal["stream"]
-    modifier: Literal["start", "chunk", "end"]  # Remove | None, make it required
+    direction: Direction
+    actor: Actor
+    action: Action
+    modifier: Modifier
 
     # payload
     data: dict | list[Message]
