@@ -5,123 +5,91 @@ import {
 } from "./messageUtils";
 import type { TypedMessage } from "@/store/useMessageStore";
 
+type EmitCallback = (event: string, data: unknown, callback?: (ack: string) => void) => void;
+type AddMessage = (message: TypedMessage) => void;
+type CreateStreamMessage = (streamId: string, requestId: string, actor: Actor) => void;
+
+const createHumanMessage = (inputText: string): TypedMessage => ({
+  id: `human-${Date.now()}`,
+  ts: new Date().getTime(),
+  content: inputText,
+  type: "human",
+});
+
+const createStreamStartEnvelope = <T>(
+  actor: Actor,
+  data: T
+): Envelope<T> => ({
+  v: "1",
+  id: `human-${Date.now()}`,
+  ts: new Date().getTime(),
+  requestId: crypto.randomUUID(),
+  direction: "c2s",
+  actor,
+  action: "stream",
+  modifier: "start",
+  data,
+});
+
+const handleStreamAck = (
+  ack: string,
+  actor: Actor,
+  createStreamMessage: CreateStreamMessage
+) => {
+  console.log("ack", ack);
+  const { streamId, requestId } = JSON.parse(ack) as {
+    streamId: string;
+    requestId: string;
+  };
+  createStreamMessage(streamId, requestId, actor);
+};
+
 export const sendCodeMessage = async (
   inputText: string,
   setInputText: (text: string) => void,
-  emit: (
-    event: string,
-    data: unknown,
-    callback?: (ack: string) => void
-  ) => void,
-  addMessage: (message: TypedMessage) => void,
+  emit: EmitCallback,
+  addMessage: AddMessage,
   humanAreaMessages: TypedMessage[],
-  createStreamMessage: (
-    streamId: string,
-    requestId: string,
-    actor: Actor
-  ) => void
+  createStreamMessage: CreateStreamMessage
 ) => {
-
-  const humanMessage: TypedMessage = {
-    id: `human-${Date.now()}`,
-    ts: new Date().getTime(),
-    content: inputText,
-    type: "human",
-  };
-
+  const humanMessage = createHumanMessage(inputText);
   addMessage(humanMessage);
+
   const history = constructChatStreamMessages(humanAreaMessages);
-
   const codeRequest = await prepareCodeMessage(inputText);
-
-  const data = {
-    history,
-    codeRequest,
-  };
-
-  const envelope: Envelope<typeof data> = {
-    v: "1",
-    id: `human-${Date.now()}`,
-    ts: new Date().getTime(),
-    requestId: crypto.randomUUID(),
-    direction: "c2s",
-    actor: "coder",
-    action: "stream",
-    modifier: "start",
-    data,
-  };
+  const data = { history, codeRequest };
+  const envelope = createStreamStartEnvelope("coder", data);
 
   setInputText("");
-
-  emit(`c2s.coder.stream.start`, envelope, (ack: string) => {
-    console.log("ack", ack);
-    const ack_parsed: { streamId: string; requestId: string } =
-      JSON.parse(ack);
-    createStreamMessage(
-      ack_parsed.streamId,
-      ack_parsed.requestId,
-      "coder"
-    );
-  });
+  
+  emit(`c2s.coder.stream.start`, envelope, (ack) =>
+    handleStreamAck(ack, "coder", createStreamMessage)
+  );
 };
 
 export const sendChatMessage = async (
   inputText: string,
   setInputText: (text: string) => void,
-  emit: (
-    event: string,
-    data: unknown,
-    callback?: (ack: string) => void
-  ) => void,
-  addMessage: (message: TypedMessage) => void,
+  emit: EmitCallback,
+  addMessage: AddMessage,
   humanAreaMessages: TypedMessage[],
-  createStreamMessage: (
-    streamId: string,
-    requestId: string,
-    actor: Actor
-  ) => void
+  createStreamMessage: CreateStreamMessage
 ) => {
   if (!inputText.trim()) return;
 
-  const humanMessage: TypedMessage = {
-    id: `human-${Date.now()}`,
-    ts: new Date().getTime(),
-    content: inputText,
-    type: "human",
-  };
-
+  const humanMessage = createHumanMessage(inputText);
   addMessage(humanMessage);
 
   const messagesToSend = [
     ...constructChatStreamMessages(humanAreaMessages),
-    {
-      role: "user",
-      content: inputText,
-    },
+    { role: "user", content: inputText },
   ];
-
-  const envelope: Envelope<typeof messagesToSend> = {
-    v: "1",
-    id: `human-${Date.now()}`,
-    ts: new Date().getTime(),
-    requestId: crypto.randomUUID(),
-    direction: "c2s",
-    actor: "assistant",
-    action: "stream",
-    modifier: "start",
-    data: messagesToSend,
-  };
-
+  
+  const envelope = createStreamStartEnvelope("assistant", messagesToSend);
+  
   setInputText("");
-
-  emit(`c2s.assistant.stream.start`, envelope, (ack: string) => {
-    console.log("ack", ack);
-    const ack_parsed: { streamId: string; requestId: string } =
-      JSON.parse(ack);
-    createStreamMessage(
-      ack_parsed.streamId,
-      ack_parsed.requestId,
-      "assistant"
-    );
-  });
+  
+  emit(`c2s.assistant.stream.start`, envelope, (ack) =>
+    handleStreamAck(ack, "assistant", createStreamMessage)
+  );
 };

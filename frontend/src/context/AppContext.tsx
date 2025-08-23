@@ -43,41 +43,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const { isConnected, emit, socket } = useSocket();
 
-  const handleCodeSendClick = useCallback(async () => {
-    await sendCodeMessage(
-      inputText,
-      setInputText,
-      emit,
-      addMessage,
-      humanAreaMessages,
-      createStreamMessage
-    );
-  }, [
-    inputText,
-    setInputText,
-    emit,
-    addMessage,
-    humanAreaMessages,
-    createStreamMessage,
-  ]);
+  const createMessageHandler = useCallback(
+    (sendFn: typeof sendChatMessage) => async () => {
+      await sendFn(
+        inputText,
+        setInputText,
+        emit,
+        addMessage,
+        humanAreaMessages,
+        createStreamMessage
+      );
+    },
+    [inputText, setInputText, emit, addMessage, humanAreaMessages, createStreamMessage]
+  );
 
-  const handleInputSendClick = useCallback(async () => {
-    await sendChatMessage(
-      inputText,
-      setInputText,
-      emit,
-      addMessage,
-      humanAreaMessages,
-      createStreamMessage
-    );
-  }, [
-    inputText,
-    setInputText,
-    emit,
-    addMessage,
-    humanAreaMessages,
-    createStreamMessage,
-  ]);
+  const handleCodeSendClick = useCallback(
+    () => createMessageHandler(sendCodeMessage)(),
+    [createMessageHandler]
+  );
+
+  const handleInputSendClick = useCallback(
+    () => createMessageHandler(sendChatMessage)(),
+    [createMessageHandler]
+  );
 
   return (
     <AppContext.Provider
