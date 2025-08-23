@@ -3,6 +3,7 @@ import { useAppContext } from "@/context/AppContext";
 import { useHumanAreaMessages } from "@/store/useMessageStore";
 import { useEffect, useRef } from "react";
 import { MessageInput } from "./MessageInput";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 const ConversationHeader = () => {
   return (
@@ -37,12 +38,13 @@ const MessageList = () => {
             className={`rounded-lg p-3 ${
               message.type === "human"
                 ? "max-w-[80%] bg-primary text-primary-foreground"
-                : "w-full bg-muted border border-border"
+                : "w-full bg-muted/50 border border-border"
             }`}
           >
-            <pre className="whitespace-pre-wrap text-sm overflow-x-auto">
-              {message.content}
-            </pre>
+            <MarkdownRenderer 
+              content={message.content} 
+              className="text-sm"
+            />
           </div>
         </div>
       ))}

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useCodeMessages } from "@/store/useMessageStore";
 import { Button } from "./ui/button";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 import type { GeneratedCode } from "@/types/serverTypes";
 import type { BaseMessage } from "@/store/useMessageStore";
 
@@ -15,13 +16,11 @@ const GenerativeHeader = () => {
 
 const GenerativeMessage = ({ message }: { message: BaseMessage }) => {
   return (
-    <div className="bg-secondary/10 rounded-lg p-4">
-      {/* <p className="text-sm text-muted-foreground mb-2">
-        {message.ts.toLocaleTimeString()}
-      </p> */}
-      <pre className="whitespace-pre-wrap text-sm bg-background border border-border rounded p-3 overflow-x-auto">
-        {message.content}
-      </pre>
+    <div className="bg-secondary/10 rounded-lg p-4 border border-border">
+      <MarkdownRenderer 
+        content={message.content}
+        className="text-sm"
+      />
     </div>
   );
 };
