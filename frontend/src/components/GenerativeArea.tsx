@@ -1,6 +1,9 @@
 import { useEffect, useRef, useMemo, memo } from "react";
 import { useAppContext } from "@/context/AppContext";
-import { useCodeMessages } from "@/store/useMessageStore";
+import {
+  useCodeMessages,
+  useWriterMessages,
+} from "@/store/useMessageStore";
 import { Button } from "./ui/button";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -15,36 +18,45 @@ const GenerativeHeader = () => {
   );
 };
 
-const GenerativeMessage = memo(({ message }: { message: BaseMessage }) => {
-  return (
-    <div className="bg-secondary/10 rounded-lg border border-border overflow-hidden">
-      <SyntaxHighlighter
-        language="typescript"
-        style={vscDarkPlus}
-        customStyle={{
-          margin: 0,
-          padding: "1rem",
-          fontSize: "0.875rem",
-          backgroundColor: "#1e1e1e",
-          borderRadius: "0.5rem",
-        }}
-        showLineNumbers
-        wrapLines
-        lineNumberStyle={{
-          minWidth: "3em",
-          paddingRight: "1em",
-          color: "#858585",
-        }}
-      >
-        {message.content}
-      </SyntaxHighlighter>
-    </div>
-  );
-});
+const GenerativeMessage = memo(
+  ({ message }: { message: BaseMessage }) => {
+    return (
+      <div className="bg-secondary/10 rounded-lg border border-border overflow-hidden">
+        <SyntaxHighlighter
+          language="typescript"
+          style={vscDarkPlus}
+          customStyle={{
+            margin: 0,
+            padding: "1rem",
+            fontSize: "0.875rem",
+            backgroundColor: "#1e1e1e",
+            borderRadius: "0.5rem",
+          }}
+          showLineNumbers
+          wrapLines
+          lineNumberStyle={{
+            minWidth: "3em",
+            paddingRight: "1em",
+            color: "#858585",
+          }}
+        >
+          {message.content}
+        </SyntaxHighlighter>
+      </div>
+    );
+  }
+);
 
 const GenerativeMessageList = () => {
   const generativeMessages = useCodeMessages();
   const generativeMessageRef = useRef<HTMLDivElement>(null);
+
+  const writerMessages = useWriterMessages();
+
+  const allMessages = useMemo(
+    () => [...writerMessages, ...generativeMessages],
+    [writerMessages, generativeMessages]
+  );
 
   const scrollToBottom = () => {
     generativeMessageRef.current?.scrollIntoView({
@@ -52,16 +64,16 @@ const GenerativeMessageList = () => {
     });
   };
 
-  const messagesLength = generativeMessages.length;
+  const messagesLength = allMessages.length;
   useEffect(() => {
     scrollToBottom();
   }, [messagesLength]);
 
   const memoizedMessages = useMemo(() => {
-    return generativeMessages.map((message) => (
+    return allMessages.map((message) => (
       <GenerativeMessage key={message.id} message={message} />
     ));
-  }, [generativeMessages]);
+  }, [allMessages]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">

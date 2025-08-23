@@ -41,8 +41,8 @@ const MessageList = () => {
               : "w-full bg-muted/50 border border-border"
           }`}
         >
-          <MarkdownRenderer 
-            content={message.content} 
+          <MarkdownRenderer
+            content={message.content}
             className="text-sm"
           />
         </div>
@@ -59,20 +59,28 @@ const MessageList = () => {
 };
 
 const RecordingControls = () => {
-  const { showGenerative, setShowGenerative, handleCodeSendClick } =
-    useAppContext();
+  const {
+    showGenerative,
+    setShowGenerative,
+    handleCodeSendClick,
+    handleWriterSendClick,
+  } = useAppContext();
 
   const handleToggleGenerative = () => {
     setShowGenerative(!showGenerative);
   };
 
   return (
-    <div className="flex gap-2">
-      {/* <Button variant="outline" size="sm">
-        Record
-      </Button> */}
+    <div className="flex gap-2 justify-between">
       <Button variant="outline" size="sm" onClick={handleCodeSendClick}>
         Code
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleWriterSendClick}
+      >
+        {"Write >"}
       </Button>
       <div className="md:hidden flex-1">
         <Button

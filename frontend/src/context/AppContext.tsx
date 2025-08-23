@@ -15,6 +15,7 @@ import {
 import {
   sendChatMessage,
   sendCodeMessage,
+  sendWriterMessage,
 } from "@/lib/messageSendHandlers";
 
 interface AppContextType {
@@ -24,6 +25,7 @@ interface AppContextType {
   setShowGenerative: (showGenerative: boolean) => void;
   handleInputSendClick: () => Promise<void>;
   handleCodeSendClick: () => Promise<void>;
+  handleWriterSendClick: () => Promise<void>;
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -64,6 +66,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [createMessageHandler]
   );
 
+  const handleWriterSendClick = useCallback(
+    () => createMessageHandler(sendWriterMessage)(),
+    [createMessageHandler]
+  );
+
   // Periodic cleanup of old messages
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,6 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         showGenerative,
         setShowGenerative,
         handleCodeSendClick,
+        handleWriterSendClick,
         handleInputSendClick,
         isConnected,
         emit,

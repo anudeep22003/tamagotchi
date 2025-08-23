@@ -68,6 +68,17 @@ export const useSocket = () => {
       }
     });
 
+    socket.on("s2c.writer.stream.chunk", (rawMessage: string) => {
+
+      try {
+        const envelope: Envelope<{ delta: string }> =
+          JSON.parse(rawMessage);
+        onStreamChunk(envelope);
+      } catch (error) {
+        console.error("Error parsing stream chunk:", error, rawMessage);
+      }
+    });
+
     socketRef.current = socket;
 
     return () => {

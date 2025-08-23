@@ -93,3 +93,25 @@ export const sendChatMessage = async (
     handleStreamAck(ack, "assistant", createStreamMessage)
   );
 };
+
+export const sendWriterMessage = async (
+  inputText: string,
+  setInputText: (text: string) => void,
+  emit: EmitCallback,
+  addMessage: AddMessage,
+  humanAreaMessages: TypedMessage[],
+  createStreamMessage: CreateStreamMessage
+) => {
+  const data = {
+    history: constructChatStreamMessages(humanAreaMessages),
+  }
+
+  const envelope = createStreamStartEnvelope("writer", data);
+
+  setInputText("");
+
+  emit(`c2s.writer.stream.start`, envelope, (ack) =>
+    handleStreamAck(ack, "writer", createStreamMessage)
+  );
+  
+}

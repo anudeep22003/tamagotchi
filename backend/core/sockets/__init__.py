@@ -25,6 +25,7 @@ def register_sio_handlers() -> None:
         code,  # noqa: F401
         commit,  # noqa: F401
         setup,  # noqa: F401
+        writer,  # noqa: F401
     )
 
     print("Socket handlers registered successfully")

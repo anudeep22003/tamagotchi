@@ -87,7 +87,7 @@ export const useMessageStore = create<MessageState>()(
           if (state.allMessages.length > maxMessages) {
             return {
               ...state,
-              allMessages: state.allMessages.slice(-maxMessages)
+              allMessages: state.allMessages.slice(-maxMessages),
             };
           }
           return state;
@@ -99,8 +99,8 @@ export const useMessageStore = create<MessageState>()(
       name: "message-storage",
       partialize: (state: MessageState) => ({
         // Don't persist all messages to reduce memory usage
-        allMessages: state.allMessages.slice(-50)
-      })
+        allMessages: state.allMessages.slice(-50),
+      }),
     }
   )
 );
@@ -133,5 +133,12 @@ export const useHumanAreaMessages = () =>
       state.allMessages.filter(
         (m) => m.type === "human" || m.type === "assistant"
       )
+    )
+  );
+
+export const useWriterMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter((m) => m.type === "writer")
     )
   );
