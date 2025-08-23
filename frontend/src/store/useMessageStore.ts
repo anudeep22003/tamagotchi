@@ -1,4 +1,4 @@
-import type { Domain, Envelope } from "@/types/envelopeType";
+import type { Actor, Envelope } from "@/types/envelopeType";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
@@ -15,7 +15,7 @@ export interface BaseMessage {
   type: MessageType;
 }
 
-export type MessageType = "human" | Domain;
+export type MessageType = "human" | Actor;
 
 export type TypedMessage = BaseMessage;
 
@@ -105,7 +105,7 @@ export const useAssistantMessages = () =>
 export const useCodeMessages = () =>
   useMessageStore(
     useShallow((state) =>
-      state.allMessages.filter((m) => m.type === "code")
+      state.allMessages.filter((m) => m.type === "coder")
     )
   );
 

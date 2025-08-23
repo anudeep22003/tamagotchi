@@ -49,7 +49,7 @@ class Envelope(AliasedBaseModel):
 
     # control
     direction: Literal["c2s", "s2c"]
-    domain: Literal["assistant"]
+    actor: Literal["assistant", "coder"]
     action: Literal["stream"]
     modifier: Literal["start", "chunk", "end"]  # Remove | None, make it required
 

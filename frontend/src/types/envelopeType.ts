@@ -1,5 +1,5 @@
 export type Direction = "c2s" | "s2c";
-export type Domain = "assistant" | "code";
+export type Actor = "assistant" | "coder";
 export type Action = "stream";
 export type Modifier = "start" | "chunk" | "end";
 
@@ -18,7 +18,7 @@ export type Envelope<T = unknown> = {
 
   // control
   direction: Direction;
-  domain: Domain;
+  actor: Actor;
   action: Action;
   modifier: Modifier;
 

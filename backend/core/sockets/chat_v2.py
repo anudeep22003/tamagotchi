@@ -103,7 +103,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 stream_id=stream_id,
                 seq=seq,
                 direction="s2c",
-                domain="assistant",
+                actor="assistant",
                 action="stream",
                 modifier="chunk",
                 data={
@@ -121,7 +121,7 @@ async def stream_chunks(sid: str, data: list[Message], request_id: str, stream_i
                 stream_id=stream_id,
                 seq=seq,
                 direction="s2c",
-                domain="assistant",
+                actor="assistant",
                 action="stream",
                 modifier="end",
                 data={

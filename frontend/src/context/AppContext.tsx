@@ -77,7 +77,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       requestId: crypto.randomUUID(),
 
       direction: "c2s",
-      domain: "assistant",
+      actor: "assistant",
       action: "stream",
       modifier: "start",
       data,
