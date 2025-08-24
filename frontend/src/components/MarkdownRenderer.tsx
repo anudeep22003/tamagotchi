@@ -9,6 +9,7 @@ import type { Components } from "react-markdown";
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  onContentLoad?: () => void;
 }
 
 mermaid.initialize({
@@ -25,25 +26,71 @@ mermaid.initialize({
   },
 });
 
-const MermaidDiagram = ({ code }: { code: string }) => {
+const LinkPreview = ({
+  href,
+  children,
+  ...props
+}: {
+  href?: string;
+  children: React.ReactNode;
+  [key: string]: unknown;
+}) => {
+  const [showPreview, setShowPreview] = useState(false);
+
+  return (
+    <span className="relative inline-block">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-2 transition-colors"
+        onMouseEnter={() => setShowPreview(true)}
+        onMouseLeave={() => setShowPreview(false)}
+        {...props}
+      >
+        {children}
+      </a>
+      {showPreview && (
+        <div className="absolute bottom-full left-0 mb-2 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg z-10 whitespace-nowrap border border-border">
+          {href}
+        </div>
+      )}
+    </span>
+  );
+};
+
+const MermaidDiagram = ({
+  code,
+  onLoad,
+}: {
+  code: string;
+  onLoad?: () => void;
+}) => {
   const [svg, setSvg] = useState<string>("");
-  const mermaidId = useMemo(() => `mermaid-${Date.now()}-${Math.random()}`, []);
+  const mermaidId = useMemo(
+    () => `mermaid-${Date.now()}-${Math.random()}`,
+    []
+  );
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const renderDiagram = async () => {
       try {
         const { svg } = await mermaid.render(mermaidId, code);
         if (isMounted) {
           setSvg(svg);
+          // Trigger scroll update after diagram is rendered
+          setTimeout(() => {
+            onLoad?.();
+          }, 50);
         }
       } catch (error) {
         console.error("Failed to render mermaid diagram:", error);
       }
     };
     renderDiagram();
-    
+
     return () => {
       isMounted = false;
       // Cleanup any mermaid DOM nodes
@@ -52,23 +99,35 @@ const MermaidDiagram = ({ code }: { code: string }) => {
         element.remove();
       }
     };
-  }, [code, mermaidId]);
+  }, [code, mermaidId, onLoad]);
 
-  if (!svg) return <div className="text-muted-foreground">Loading diagram...</div>;
-  
-  return <div dangerouslySetInnerHTML={{ __html: svg }} className="mermaid-container" />;
+  if (!svg)
+    return (
+      <div className="text-muted-foreground">Loading diagram...</div>
+    );
+
+  return (
+    <div
+      dangerouslySetInnerHTML={{ __html: svg }}
+      className="mermaid-container"
+    />
+  );
 };
 
-export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererProps) => {
+export const MarkdownRenderer = ({
+  content,
+  className = "",
+  onContentLoad,
+}: MarkdownRendererProps) => {
   const processedContent = content || "";
-  
+
   const isIncompleteCodeBlock = (text: string) => {
     const codeBlockStarts = (text.match(/```/g) || []).length;
     return codeBlockStarts % 2 !== 0;
   };
-  
-  const finalContent = isIncompleteCodeBlock(processedContent) 
-    ? processedContent + "\n```" 
+
+  const finalContent = isIncompleteCodeBlock(processedContent)
+    ? processedContent + "\n```"
     : processedContent;
 
   const components: Components = {
@@ -77,11 +136,13 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
       const language = match ? match[1] : "";
       const codeString = String(children).replace(/\n$/, "");
       const isCodeBlock = className?.includes("language-");
-      
+
       if (language === "mermaid" && isCodeBlock) {
-        return <MermaidDiagram code={codeString} />;
+        return (
+          <MermaidDiagram code={codeString} onLoad={onContentLoad} />
+        );
       }
-      
+
       if (isCodeBlock && language) {
         return (
           <div className="relative group my-3">
@@ -102,7 +163,7 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
           </div>
         );
       }
-      
+
       if (isCodeBlock) {
         return (
           <div className="relative group my-3">
@@ -114,11 +175,9 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
           </div>
         );
       }
-      
+
       return (
-        <code 
-          className="bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono"
-        >
+        <code className="bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono">
           {children}
         </code>
       );
@@ -127,33 +186,19 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
       return <>{children}</>;
     },
     a({ href, children, ...props }) {
-      const [showPreview, setShowPreview] = useState(false);
-      
       return (
-        <span className="relative inline-block">
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-2 transition-colors"
-            onMouseEnter={() => setShowPreview(true)}
-            onMouseLeave={() => setShowPreview(false)}
-            {...props}
-          >
-            {children}
-          </a>
-          {showPreview && (
-            <div className="absolute bottom-full left-0 mb-2 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg z-10 whitespace-nowrap border border-border">
-              {href}
-            </div>
-          )}
-        </span>
+        <LinkPreview href={href} {...props}>
+          {children}
+        </LinkPreview>
       );
     },
     table({ children, ...props }) {
       return (
         <div className="overflow-x-auto my-4">
-          <table className="min-w-full divide-y divide-border rounded-lg overflow-hidden" {...props}>
+          <table
+            className="min-w-full divide-y divide-border rounded-lg overflow-hidden"
+            {...props}
+          >
             {children}
           </table>
         </div>
@@ -175,7 +220,10 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
     },
     th({ children, ...props }) {
       return (
-        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider" {...props}>
+        <th
+          className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+          {...props}
+        >
           {children}
         </th>
       );
@@ -189,30 +237,43 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
     },
     ul({ children, ...props }) {
       return (
-        <ul className="list-disc list-inside space-y-1.5 my-3 ml-4" {...props}>
+        <ul
+          className="list-disc list-inside space-y-1.5 my-3 ml-4"
+          {...props}
+        >
           {children}
         </ul>
       );
     },
     ol({ children, ...props }) {
       return (
-        <ol className="list-decimal list-inside space-y-1.5 my-3 ml-4" {...props}>
+        <ol
+          className="list-decimal list-inside space-y-1.5 my-3 ml-4"
+          {...props}
+        >
           {children}
         </ol>
       );
     },
     li({ children, ...props }) {
-      const checkbox = (children as any)?.[0]?.props?.checked !== undefined;
+      const checkbox =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (children as any)?.[0]?.props?.checked !== undefined;
       if (checkbox) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const checked = (children as any)[0].props.checked;
         return (
-          <li className="flex items-start space-x-2 list-none" {...props}>
+          <li
+            className="flex items-start space-x-2 list-none"
+            {...props}
+          >
             <input
               type="checkbox"
               checked={checked}
               readOnly
               className="mt-1 rounded border-border bg-muted"
             />
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <span>{(children as any).slice(1)}</span>
           </li>
         );
@@ -221,7 +282,10 @@ export const MarkdownRenderer = ({ content, className = "" }: MarkdownRendererPr
     },
     blockquote({ children, ...props }) {
       return (
-        <blockquote className="border-l-4 border-muted-foreground/50 pl-4 my-3 italic text-muted-foreground" {...props}>
+        <blockquote
+          className="border-l-4 border-muted-foreground/50 pl-4 my-3 italic text-muted-foreground"
+          {...props}
+        >
           {children}
         </blockquote>
       );

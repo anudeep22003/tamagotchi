@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useHumanAreaMessages } from "@/store/useMessageStore";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useCallback } from "react";
 import { MessageInput } from "./MessageInput";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
@@ -17,14 +17,20 @@ const MessageList = () => {
   const humanAreaMessages = useHumanAreaMessages();
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = useCallback(() => {
+    // Use setTimeout to ensure DOM is updated after markdown rendering
+    setTimeout(() => {
+      messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+  }, []);
 
   const messagesLength = humanAreaMessages.length;
+  const lastMessageContent =
+    humanAreaMessages[humanAreaMessages.length - 1]?.content || "";
+
   useEffect(() => {
     scrollToBottom();
-  }, [messagesLength]);
+  }, [messagesLength, lastMessageContent, scrollToBottom]);
 
   const memoizedMessages = useMemo(() => {
     return humanAreaMessages.map((message) => (
@@ -44,11 +50,12 @@ const MessageList = () => {
           <MarkdownRenderer
             content={message.content}
             className="text-sm"
+            onContentLoad={scrollToBottom}
           />
         </div>
       </div>
     ));
-  }, [humanAreaMessages]);
+  }, [humanAreaMessages, scrollToBottom]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
