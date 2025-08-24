@@ -12,12 +12,22 @@ export const useSocket = () => {
   const updateStreamingMessage = useMessageStore(
     (state) => state.updateStreamingMessage
   );
+  const removeStreamingActor = useMessageStore(
+    (state) => state.removeStreamingActor
+  );
 
   const onStreamChunk = useCallback(
     (envelope: Envelope<{ delta: string }>) => {
       updateStreamingMessage(envelope);
     },
     [updateStreamingMessage]
+  );
+
+  const onStreamEnd = useCallback(
+    (actor: "assistant" | "coder" | "writer") => {
+      removeStreamingActor(actor);
+    },
+    [removeStreamingActor]
   );
 
   const emit = useCallback(
@@ -79,12 +89,24 @@ export const useSocket = () => {
       }
     });
 
+    socket.on("s2c.assistant.stream.end", () => {
+      onStreamEnd("assistant");
+    });
+
+    socket.on("s2c.coder.stream.end", () => {
+      onStreamEnd("coder");
+    });
+
+    socket.on("s2c.writer.stream.end", () => {
+      onStreamEnd("writer");
+    });
+
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
     };
-  }, [onStreamChunk]);
+  }, [onStreamChunk, onStreamEnd]);
 
   return {
     isConnected,

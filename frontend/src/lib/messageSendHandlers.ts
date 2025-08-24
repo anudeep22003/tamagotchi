@@ -95,10 +95,10 @@ export const sendChatMessage = async (
 };
 
 export const sendWriterMessage = async (
-  inputText: string,
+  _inputText: string,
   setInputText: (text: string) => void,
   emit: EmitCallback,
-  addMessage: AddMessage,
+  _addMessage: AddMessage,
   humanAreaMessages: TypedMessage[],
   createStreamMessage: CreateStreamMessage
 ) => {

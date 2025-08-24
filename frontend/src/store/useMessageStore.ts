@@ -21,6 +21,9 @@ export type TypedMessage = BaseMessage;
 
 interface MessageState {
   allMessages: TypedMessage[];
+  activeTab: Actor | null;
+  isTabManuallySelected: boolean;
+  streamingActors: Set<Actor>;
   addMessage: (message: TypedMessage) => void;
   createStreamMessage: (
     streamId: string,
@@ -31,12 +34,18 @@ interface MessageState {
     envelope: Envelope<{ delta: string }>
   ) => void;
   clearOldMessages: () => void;
+  setActiveTab: (actor: Actor, isManual?: boolean) => void;
+  addStreamingActor: (actor: Actor) => void;
+  removeStreamingActor: (actor: Actor) => void;
 }
 
 export const useMessageStore = create<MessageState>()(
   devtools(
     (set) => ({
       allMessages: [],
+      activeTab: null,
+      isTabManuallySelected: false,
+      streamingActors: new Set(),
       addMessage: (message) =>
         set((state) => ({
           allMessages: [...state.allMessages, message],
@@ -52,9 +61,18 @@ export const useMessageStore = create<MessageState>()(
           type,
         };
 
-        set((state) => ({
-          allMessages: [...state.allMessages, newMessage],
-        }));
+        set((state) => {
+          const actor = type as Actor;
+          const newStreamingActors = new Set(state.streamingActors);
+          if (type !== "human") {
+            newStreamingActors.add(actor);
+          }
+          
+          return {
+            allMessages: [...state.allMessages, newMessage],
+            streamingActors: newStreamingActors,
+          };
+        });
       },
       updateStreamingMessage: (envelope) => {
         set((state) => {
@@ -91,6 +109,24 @@ export const useMessageStore = create<MessageState>()(
             };
           }
           return state;
+        });
+      },
+      setActiveTab: (actor, isManual = false) => {
+        set(() => ({
+          activeTab: actor,
+          isTabManuallySelected: isManual,
+        }));
+      },
+      addStreamingActor: (actor) => {
+        set((state) => ({
+          streamingActors: new Set([...state.streamingActors, actor]),
+        }));
+      },
+      removeStreamingActor: (actor) => {
+        set((state) => {
+          const newStreamingActors = new Set(state.streamingActors);
+          newStreamingActors.delete(actor);
+          return { streamingActors: newStreamingActors };
         });
       },
     }),
