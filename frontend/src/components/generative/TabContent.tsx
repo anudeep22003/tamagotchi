@@ -2,10 +2,12 @@ import { useEffect, useRef, useMemo, memo, useCallback } from "react";
 import { CodeMessage } from "./CodeMessage";
 import { WriterMessage } from "./WriterMessage";
 import type { BaseMessage } from "@/store/useMessageStore";
+import type { Actor } from "@/types/envelopeType";
+import { ClaudeMessage } from "./ClaudeMessage";
 
 interface TabContentProps {
   messages: BaseMessage[];
-  type: "coder" | "writer";
+  type: Actor;
 }
 
 export const TabContent = memo(
@@ -33,13 +35,15 @@ export const TabContent = memo(
       return messages.map((message) =>
         type === "coder" ? (
           <CodeMessage key={message.id} message={message} />
-        ) : (
+        ) : type === "writer" ? (
           <WriterMessage
             key={message.id}
             message={message}
             onContentLoad={scrollToBottom}
           />
-        )
+        ) : type === "claude" ? (
+          <ClaudeMessage key={message.id} message={message} />
+        ) : null
       );
     }, [messages, type, scrollToBottom]);
 

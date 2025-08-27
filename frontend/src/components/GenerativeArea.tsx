@@ -3,6 +3,7 @@ import {
   useCodeMessages,
   useWriterMessages,
   useMessageStore,
+  useClaudeMessages,
 } from "@/store/useMessageStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { TabContent } from "./generative/TabContent";
@@ -35,6 +36,7 @@ const EmptyState = () => {
 export const GenerativeArea = () => {
   const codeMessages = useCodeMessages();
   const writerMessages = useWriterMessages();
+  const claudeMessages = useClaudeMessages();
 
   const activeTab = useMessageStore((state) => state.activeTab);
   const setActiveTab = useMessageStore((state) => state.setActiveTab);
@@ -46,8 +48,13 @@ export const GenerativeArea = () => {
     const tabs: Actor[] = [];
     if (codeMessages.length > 0) tabs.push("coder");
     if (writerMessages.length > 0) tabs.push("writer");
+    if (claudeMessages.length > 0) tabs.push("claude");
     return tabs;
-  }, [codeMessages.length, writerMessages.length]);
+  }, [
+    codeMessages.length,
+    writerMessages.length,
+    claudeMessages.length,
+  ]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as Actor, true);
@@ -90,6 +97,12 @@ export const GenerativeArea = () => {
         {availableTabs.includes("writer" as Actor) && (
           <TabsContent value="writer" className="flex-1 mt-0">
             <TabContent messages={writerMessages} type="writer" />
+          </TabsContent>
+        )}
+
+        {availableTabs.includes("claude" as Actor) && (
+          <TabsContent value="claude" className="flex-1 mt-0">
+            <TabContent messages={claudeMessages} type="claude" />
           </TabsContent>
         )}
       </Tabs>

@@ -5,9 +5,17 @@ import {
 } from "./messageUtils";
 import type { TypedMessage } from "@/store/useMessageStore";
 
-type EmitCallback = (event: string, data: unknown, callback?: (ack: string) => void) => void;
+type EmitCallback = (
+  event: string,
+  data: unknown,
+  callback?: (ack: string) => void
+) => void;
 type AddMessage = (message: TypedMessage) => void;
-type CreateStreamMessage = (streamId: string, requestId: string, actor: Actor) => void;
+type CreateStreamMessage = (
+  streamId: string,
+  requestId: string,
+  actor: Actor
+) => void;
 
 const createHumanMessage = (inputText: string): TypedMessage => ({
   id: `human-${Date.now()}`,
@@ -61,7 +69,7 @@ export const sendCodeMessage = async (
   const envelope = createStreamStartEnvelope("coder", data);
 
   setInputText("");
-  
+
   emit(`c2s.coder.stream.start`, envelope, (ack) =>
     handleStreamAck(ack, "coder", createStreamMessage)
   );
@@ -84,11 +92,14 @@ export const sendChatMessage = async (
     ...constructChatStreamMessages(humanAreaMessages),
     { role: "user", content: inputText },
   ];
-  
-  const envelope = createStreamStartEnvelope("assistant", messagesToSend);
-  
+
+  const envelope = createStreamStartEnvelope(
+    "assistant",
+    messagesToSend
+  );
+
   setInputText("");
-  
+
   emit(`c2s.assistant.stream.start`, envelope, (ack) =>
     handleStreamAck(ack, "assistant", createStreamMessage)
   );
@@ -104,7 +115,7 @@ export const sendWriterMessage = async (
 ) => {
   const data = {
     history: constructChatStreamMessages(humanAreaMessages),
-  }
+  };
 
   const envelope = createStreamStartEnvelope("writer", data);
 
@@ -113,5 +124,25 @@ export const sendWriterMessage = async (
   emit(`c2s.writer.stream.start`, envelope, (ack) =>
     handleStreamAck(ack, "writer", createStreamMessage)
   );
-  
-}
+};
+
+export const sendClaudeMessage = async (
+  _inputText: string,
+  setInputText: (text: string) => void,
+  emit: EmitCallback,
+  _addMessage: AddMessage,
+  _humanAreaMessages: TypedMessage[],
+  createStreamMessage: CreateStreamMessage
+) => {
+  const data = {
+    query: "What is the capital of France?",
+  };
+
+  const envelope = createStreamStartEnvelope("claude", data);
+
+  setInputText("");
+
+  emit(`c2s.claude.stream.start`, envelope, (ack) =>
+    handleStreamAck(ack, "claude", createStreamMessage)
+  );
+};

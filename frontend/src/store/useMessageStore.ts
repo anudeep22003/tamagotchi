@@ -67,7 +67,7 @@ export const useMessageStore = create<MessageState>()(
           if (type !== "human") {
             newStreamingActors.add(actor);
           }
-          
+
           return {
             allMessages: [...state.allMessages, newMessage],
             streamingActors: newStreamingActors,
@@ -176,5 +176,12 @@ export const useWriterMessages = () =>
   useMessageStore(
     useShallow((state) =>
       state.allMessages.filter((m) => m.type === "writer")
+    )
+  );
+
+export const useClaudeMessages = () =>
+  useMessageStore(
+    useShallow((state) =>
+      state.allMessages.filter((m) => m.type === "claude")
     )
   );

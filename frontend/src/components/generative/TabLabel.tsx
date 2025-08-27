@@ -11,6 +11,7 @@ export const TabLabel = ({ actor, isStreaming }: TabLabelProps) => {
     assistant: "Assistant",
     coder: "Code",
     writer: "Writer",
+    claude: "Claude",
   };
 
   return (

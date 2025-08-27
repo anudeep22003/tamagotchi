@@ -31,7 +31,7 @@ class ErrorDetails(AliasedBaseModel):
 
 
 Direction = Literal["c2s", "s2c"]
-Actor = Literal["assistant", "coder", "writer"]
+Actor = Literal["assistant", "coder", "writer", "claude"]
 Action = Literal["stream"]
 Modifier = Literal["start", "chunk", "end"]
 

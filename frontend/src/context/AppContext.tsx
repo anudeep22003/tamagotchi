@@ -14,6 +14,7 @@ import {
 } from "@/store/useMessageStore";
 import {
   sendChatMessage,
+  sendClaudeMessage,
   sendCodeMessage,
   sendWriterMessage,
 } from "@/lib/messageSendHandlers";
@@ -26,6 +27,7 @@ interface AppContextType {
   handleInputSendClick: () => Promise<void>;
   handleCodeSendClick: () => Promise<void>;
   handleWriterSendClick: () => Promise<void>;
+  handleClaudeSendClick: () => Promise<void>;
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -58,7 +60,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         createStreamMessage
       );
     },
-    [inputText, setInputText, emit, addMessage, humanAreaMessages, createStreamMessage]
+    [
+      inputText,
+      setInputText,
+      emit,
+      addMessage,
+      humanAreaMessages,
+      createStreamMessage,
+    ]
   );
 
   const handleCodeSendClick = useCallback(
@@ -71,12 +80,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [createMessageHandler]
   );
 
+  const handleClaudeSendClick = useCallback(
+    () => createMessageHandler(sendClaudeMessage)(),
+    [createMessageHandler]
+  );
+
   // Periodic cleanup of old messages
   useEffect(() => {
     const interval = setInterval(() => {
       clearOldMessages();
     }, 60000); // Clear old messages every minute
-    
+
     return () => clearInterval(interval);
   }, [clearOldMessages]);
 
@@ -94,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setShowGenerative,
         handleCodeSendClick,
         handleWriterSendClick,
+        handleClaudeSendClick,
         handleInputSendClick,
         isConnected,
         emit,

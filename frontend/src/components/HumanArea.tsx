@@ -71,6 +71,7 @@ const RecordingControls = () => {
     setShowGenerative,
     handleCodeSendClick,
     handleWriterSendClick,
+    handleClaudeSendClick,
   } = useAppContext();
 
   const handleToggleGenerative = () => {
@@ -81,6 +82,13 @@ const RecordingControls = () => {
     <div className="flex gap-2 justify-between">
       <Button variant="outline" size="sm" onClick={handleCodeSendClick}>
         Code
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleClaudeSendClick}
+      >
+        Claude
       </Button>
       <Button
         variant="outline"

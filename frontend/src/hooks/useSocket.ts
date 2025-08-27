@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import io from "socket.io-client";
 import { BACKEND_URL } from "@/constants";
 import { Socket } from "socket.io-client";
-import type { Envelope } from "@/types/envelopeType";
+import type { Actor, Envelope } from "@/types/envelopeType";
 import { useMessageStore } from "@/store/useMessageStore";
 
 export const useSocket = () => {
@@ -24,7 +24,7 @@ export const useSocket = () => {
   );
 
   const onStreamEnd = useCallback(
-    (actor: "assistant" | "coder" | "writer") => {
+    (actor: Actor) => {
       removeStreamingActor(actor);
     },
     [removeStreamingActor]
@@ -79,7 +79,16 @@ export const useSocket = () => {
     });
 
     socket.on("s2c.writer.stream.chunk", (rawMessage: string) => {
+      try {
+        const envelope: Envelope<{ delta: string }> =
+          JSON.parse(rawMessage);
+        onStreamChunk(envelope);
+      } catch (error) {
+        console.error("Error parsing stream chunk:", error, rawMessage);
+      }
+    });
 
+    socket.on("s2c.claude.stream.chunk", (rawMessage: string) => {
       try {
         const envelope: Envelope<{ delta: string }> =
           JSON.parse(rawMessage);
@@ -99,6 +108,10 @@ export const useSocket = () => {
 
     socket.on("s2c.writer.stream.end", () => {
       onStreamEnd("writer");
+    });
+
+    socket.on("s2c.claude.stream.end", () => {
+      onStreamEnd("claude");
     });
 
     socketRef.current = socket;
