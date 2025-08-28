@@ -1,10 +1,8 @@
 from loguru import logger
 
-from . import sio
+from . import active_connections, sio
 
 logger = logger.bind(name=__name__)
-
-active_connections: dict[str, dict] = {}
 
 
 MODEL = "gpt-5"
@@ -12,9 +10,9 @@ MODEL = "gpt-5"
 
 @sio.event
 async def connect(sid: str, environ: dict) -> None:
-    print("connection established")
-    print(f"# of active connections: {len(active_connections)}")
+    logger.info("connection established")
     active_connections[sid] = environ
+    logger.info(f"# of active connections: {len(active_connections)}")
 
 
 @sio.event

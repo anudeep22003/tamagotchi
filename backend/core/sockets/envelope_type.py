@@ -38,7 +38,7 @@ Modifier = Literal["start", "chunk", "end"]
 T = TypeVar("T")
 
 
-class Envelope(Generic[T], AliasedBaseModel):
+class Envelope(AliasedBaseModel, Generic[T]):
     # protocol
     v: str = "1"
 

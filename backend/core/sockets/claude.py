@@ -17,7 +17,7 @@ class ClaudeSDKRequest(AliasedBaseModel):
 
 @sio.on("c2s.claude.stream.start")
 async def request_claude_stream(sid: str, envelope: dict) -> str:
-    print(f"DEBUG: request_claude_stream handler called with sid={sid}")
+    logger.info(f"DEBUG: request_claude_stream handler called with sid={sid}")
     logger.info(f"request_claude_stream {sid}")
 
     try:
@@ -92,7 +92,7 @@ async def stream_claude_code_sdk_chunks(
             if hasattr(chunk, "content"):
                 for block in chunk.content:
                     if hasattr(block, "text"):
-                        print(f"DEBUG: chunk: {block.text}")
+                        logger.info(f"DEBUG: chunk: {block.text}")
                         envelope_to_send = Envelope(
                             request_id=request_id,
                             stream_id=stream_id,

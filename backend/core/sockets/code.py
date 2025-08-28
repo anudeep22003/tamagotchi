@@ -1,6 +1,6 @@
 import asyncio
-from typing import Literal
 import uuid
+from typing import Literal
 
 from loguru import logger
 from pydantic import Field, ValidationError
@@ -11,18 +11,6 @@ from .openai_streamer import stream_chunks
 from .types import Message
 
 logger = logger.bind(name=__name__)
-
-print("code.py module loaded - request_code_stream handler should be registered")
-
-
-@sio.event
-async def test_code_event(sid: str, data: dict) -> None:
-    print(f"DEBUG: test_code_event received from {sid}: {data}")
-    await sio.emit("test_response", {"message": "code.py handler is working"}, to=sid)
-
-
-active_connections: dict[str, dict] = {}
-
 
 MODEL: Literal["gpt-5", "gpt-4o"] = "gpt-5"
 
