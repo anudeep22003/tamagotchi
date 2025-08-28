@@ -135,7 +135,23 @@ export const sendClaudeMessage = async (
   createStreamMessage: CreateStreamMessage
 ) => {
   const data = {
-    query: "What is the capital of France?",
+    query: `
+    Now set up a websocket server with fastapi. It is a dummy server which just streams the sentence 
+      "Twinkle twinkle little star,
+      How I wonder what you are,
+      Up above the world so high,
+      Like a diamond in the sky.
+      When the blazing sun is gone,
+      When he nothing shines upon,
+      Then you show your little light,
+      Twinkle, twinkle, all the night."
+
+      Split the sentence into words and stream them one by one with a sleep of 0.2 seconds.
+
+      The websocket server should be able to handle multiple clients.
+
+      Make this a separate router. 
+      `,
   };
 
   const envelope = createStreamStartEnvelope("claude", data);

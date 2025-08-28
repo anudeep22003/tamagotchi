@@ -30,7 +30,7 @@ def check_env_vars() -> bool:
 @asynccontextmanager
 async def lifecycle_manager(self) -> AsyncGenerator[None, None]:
     # Setup logging first
-    setup_logging(level="INFO")
+    setup_logging(level="DEBUG")
     logger = logging.getLogger(__name__)
 
     logger.debug("Starting FastAPI app")

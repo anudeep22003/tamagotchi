@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 
-from claude_code_sdk import ClaudeSDKClient
+from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
 from pydantic import Field, ValidationError
 
 from . import sio
@@ -69,7 +69,18 @@ async def stream_claude_code_sdk_chunks(
     stream_id: str,
     actor="claude",
 ):
-    async with ClaudeSDKClient() as client:
+    async with ClaudeSDKClient(
+        ClaudeCodeOptions(
+            model="claude-3-5-sonnet-20241022",
+            cwd="/Users/anudeep/@anudeep/projects/tamagotchi/claude_playground/",
+            allowed_tools=["Read", "Write", "Bash", "Grep"],
+            disallowed_tools=["WebSearch", "Bash(rm*)"],
+            extra_args={
+                "verbose": "true",
+            },
+            
+        )
+    ) as client:
         await client.query(
             validated_claude_sdk_request.query,
         )
@@ -100,3 +111,21 @@ async def stream_claude_code_sdk_chunks(
                             envelope_to_send.model_dump_json(),
                             to=sid,
                         )
+            if type(chunk).__name__ == "ResultMessage":
+                envelope_to_send = Envelope(
+                    request_id=request_id,
+                    stream_id=stream_id,
+                    seq=seq,
+                    direction="s2c",
+                    actor=actor,
+                    action="stream",
+                    modifier="end",
+                    data={
+                        "finish_reason": "stop",
+                    },
+                )
+                await sio.emit(
+                    f"s2c.{actor}.stream.end",
+                    envelope_to_send.model_dump_json(),
+                    to=sid,
+                )
