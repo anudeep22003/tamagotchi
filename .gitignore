@@ -5,3 +5,5 @@ commit_details.txt
 CLAUDE.md
 .claude/
 *clarifying*
+backend/terminal.py
+claude_playground
