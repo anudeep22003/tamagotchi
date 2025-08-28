@@ -1,14 +1,14 @@
 import asyncio
-import logging
 import uuid
 
 from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
+from loguru import logger
 from pydantic import Field, ValidationError
 
 from . import sio
 from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 
 class ClaudeSDKRequest(AliasedBaseModel):
@@ -78,7 +78,6 @@ async def stream_claude_code_sdk_chunks(
             extra_args={
                 "verbose": "true",
             },
-            
         )
     ) as client:
         await client.query(

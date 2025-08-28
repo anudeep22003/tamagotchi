@@ -1,8 +1,8 @@
 import json
-import logging
 import os
 import time
 
+from loguru import logger
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel, Field, ValidationError
 
@@ -10,7 +10,7 @@ from . import async_openai_client, sio
 from .emitters import emit_chat_completion_chunk
 from .types import Choice, ChoiceDelta, StreamingResponse
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 print(
     "chat_with_knowledge.py module loaded - request_knowledge_stream handler should be registered"

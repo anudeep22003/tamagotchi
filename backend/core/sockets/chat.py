@@ -1,8 +1,8 @@
 import asyncio
-import logging
 import uuid
 from typing import Literal
 
+from loguru import logger
 from pydantic import ValidationError
 
 from core.sockets.openai_streamer import stream_chunks
@@ -11,7 +11,7 @@ from core.sockets.types import Message
 from . import sio
 from .envelope_type import AckFail, AckOk, Envelope, Error
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 MODEL: Literal["gpt-4o", "gpt-5"] = "gpt-4o"
 

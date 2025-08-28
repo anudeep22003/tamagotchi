@@ -1,12 +1,13 @@
-import logging
 from typing import Any, Literal
+
+from loguru import logger
 
 from core.sockets.types import Message
 
 from . import async_openai_client, sio
 from .envelope_type import Actor, Envelope
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 MODELS = Literal["gpt-4o", "gpt-5"]
 

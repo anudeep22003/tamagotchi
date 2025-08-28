@@ -1,8 +1,8 @@
-import logging
+from loguru import logger
 
 from . import sio
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 active_connections: dict[str, dict] = {}
 

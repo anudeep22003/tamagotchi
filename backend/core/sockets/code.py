@@ -1,8 +1,8 @@
 import asyncio
-import logging
 from typing import Literal
 import uuid
 
+from loguru import logger
 from pydantic import Field, ValidationError
 
 from . import sio
@@ -10,7 +10,7 @@ from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from .openai_streamer import stream_chunks
 from .types import Message
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name=__name__)
 
 print("code.py module loaded - request_code_stream handler should be registered")
 

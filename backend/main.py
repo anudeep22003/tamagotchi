@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import AsyncGenerator
 
@@ -7,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 
 from core.api.routers import router as v1_router
 from core.logging import setup_logging
@@ -30,8 +30,7 @@ def check_env_vars() -> bool:
 @asynccontextmanager
 async def lifecycle_manager(self) -> AsyncGenerator[None, None]:
     # Setup logging first
-    setup_logging(level="DEBUG")
-    logger = logging.getLogger(__name__)
+    setup_logging(level="DEBUG", json_format=True)
 
     logger.debug("Starting FastAPI app")
     logger.debug("Loading Env Variables")
