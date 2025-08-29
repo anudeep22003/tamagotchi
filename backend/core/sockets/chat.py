@@ -3,17 +3,23 @@ import uuid
 from typing import Literal
 
 from loguru import logger
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
 from core.sockets.openai_streamer import stream_chunks
 from core.sockets.types import Message
 
 from . import sio
-from .envelope_type import AckFail, AckOk, Envelope, Error
+from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 
 logger = logger.bind(name=__name__)
 
 MODEL: Literal["gpt-4o", "gpt-5"] = "gpt-4o"
+
+
+class AssistantRequest(AliasedBaseModel):
+    history: list[Message] = Field(
+        description="The conversation history between the user and the assistant so far"
+    )
 
 
 @sio.on("c2s.assistant.stream.start")
@@ -32,7 +38,7 @@ async def handle_chat_stream_start(
     - server sends a s2c.assistant.stream.end event
     """
     try:
-        validated_envelope = Envelope[list[Message]].model_validate(envelope)
+        validated_envelope = Envelope[AssistantRequest].model_validate(envelope)
         logger.info(
             f"Envelope received in the correct format: {validated_envelope.model_dump_json()}"
         )
@@ -55,10 +61,7 @@ async def handle_chat_stream_start(
 
     try:
         # validated_data = Data.model_validate(validated_envelope.data)
-        if isinstance(validated_envelope.data, list):
-            validated_data = [
-                Message.model_validate(msg) for msg in validated_envelope.data
-            ]
+        validated_data = validated_envelope.data
     except ValidationError:
         return AckFail(
             ok=False,
@@ -80,7 +83,7 @@ async def handle_chat_stream_start(
     asyncio.create_task(
         stream_chunks(
             sid,
-            validated_data,
+            validated_data.history,
             validated_envelope.request_id,
             stream_id,
             actor="assistant",

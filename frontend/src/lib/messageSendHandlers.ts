@@ -88,15 +88,13 @@ export const sendChatMessage = async (
   const humanMessage = createHumanMessage(inputText);
   addMessage(humanMessage);
 
-  const messagesToSend = [
+  const history = [
     ...constructChatStreamMessages(humanAreaMessages),
     { role: "user", content: inputText },
   ];
+  const data = { history };
 
-  const envelope = createStreamStartEnvelope(
-    "assistant",
-    messagesToSend
-  );
+  const envelope = createStreamStartEnvelope("assistant", data);
 
   setInputText("");
 
