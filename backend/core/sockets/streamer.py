@@ -12,7 +12,7 @@ logger = logger.bind(name=__name__)
 MODELS = Literal["gpt-4o", "gpt-5"]
 
 
-async def stream_chunks(
+async def stream_chunks_openai(
     sid: str,
     data: list[Message],
     request_id: str,

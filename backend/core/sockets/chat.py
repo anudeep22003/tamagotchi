@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import Field
 
 from core.sockets.base import BaseActor
-from core.sockets.openai_streamer import stream_chunks
+from core.sockets.streamer import stream_chunks_openai
 from core.sockets.types import Message
 
 from . import sio
@@ -23,7 +23,9 @@ class AssistantRequest(AliasedBaseModel):
 
 class AssistantActor(BaseActor[AssistantRequest]):
     def __init__(self):
-        super().__init__(actor_name="assistant", model=MODEL, stream_chunks=stream_chunks)
+        super().__init__(
+            actor_name="assistant", model=MODEL, stream_chunks=stream_chunks_openai
+        )
 
     def prepare_messages(self, validated_request: AssistantRequest) -> list[Message]:
         return validated_request.history

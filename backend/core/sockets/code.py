@@ -7,7 +7,7 @@ from pydantic import Field, ValidationError
 
 from . import sio
 from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
-from .openai_streamer import stream_chunks
+from .streamer import stream_chunks_openai
 from .types import Message
 
 logger = logger.bind(name=__name__)
@@ -161,7 +161,7 @@ async def request_code_stream(sid: str, envelope: dict) -> str:
     stream_id = str(uuid.uuid4())
 
     asyncio.create_task(
-        stream_chunks(
+        stream_chunks_openai(
             sid,
             messages_to_load,
             validated_envelope.request_id,
