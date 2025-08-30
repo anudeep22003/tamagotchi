@@ -70,3 +70,9 @@ app = socketio.ASGIApp(sio, fastapi_app)
 def health_check() -> dict[str, str]:
     """Health check endpoint for extension to test server connectivity."""
     return {"status": "ok", "message": "Server is running"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", port=8085, reload=True)
