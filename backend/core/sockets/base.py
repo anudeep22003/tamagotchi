@@ -24,7 +24,7 @@ class BaseActor(ABC, Generic[T]):
 
     def handle_stream_start(self, sid: str, envelope: dict, data_type: Type[T]) -> str:
         try:
-            validated_envelope = Envelope[data_type].model_validate(envelope)
+            validated_envelope = Envelope[data_type].model_validate(envelope)  # type: ignore
 
             if validated_envelope.request_id is None:
                 return AckFail(
