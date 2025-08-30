@@ -1,12 +1,11 @@
 import asyncio
 import uuid
 from abc import ABC, abstractmethod
-from typing import Generic, Literal, Type, TypeVar
+from typing import Generic, Literal, Protocol, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, Actor, Envelope, Error
-from core.sockets.openai_streamer import stream_chunks
 from core.sockets.types import Message
 
 MODEL_TYPE = Literal["gpt-4o", "gpt-5"]
@@ -14,10 +13,25 @@ MODEL_TYPE = Literal["gpt-4o", "gpt-5"]
 T = TypeVar("T", bound=BaseModel)
 
 
+class StreamChunks(Protocol):
+    async def __call__(
+        self,
+        sid: str,
+        messages: list[Message],
+        request_id: str,
+        stream_id: str,
+        actor: Actor,
+        model: MODEL_TYPE,
+    ) -> None: ...
+
+
 class BaseActor(ABC, Generic[T]):
-    def __init__(self, actor_name: Actor, model: MODEL_TYPE):
+    def __init__(
+        self, actor_name: Actor, model: MODEL_TYPE, stream_chunks: StreamChunks
+    ):
         self.actor_name = actor_name
         self.model = model
+        self.stream_chunks = stream_chunks
 
     @abstractmethod
     def prepare_messages(self, validated_request: T) -> list[Message]: ...
@@ -49,7 +63,7 @@ class BaseActor(ABC, Generic[T]):
         prepared_messages = self.prepare_messages(validated_envelope.data)
 
         asyncio.create_task(
-            stream_chunks(
+            self.stream_chunks(
                 sid,
                 prepared_messages,
                 validated_envelope.request_id,

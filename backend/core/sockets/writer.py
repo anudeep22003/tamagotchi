@@ -5,6 +5,7 @@ from pydantic import Field
 
 from core.sockets.base import BaseActor
 from core.sockets.envelope_type import AliasedBaseModel
+from core.sockets.openai_streamer import stream_chunks
 from core.sockets.types import Message
 
 from . import sio
@@ -23,6 +24,7 @@ class WriterActor(BaseActor[WriterRequest]):
         super().__init__(
             actor_name="writer",
             model=MODEL,
+            stream_chunks=stream_chunks,
         )
         self.system_prompt = "You are a writer. Whatever is given to you, you write a rap about getting over a tragedy,"
 
