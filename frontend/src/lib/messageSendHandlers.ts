@@ -149,6 +149,7 @@ export const sendClaudeMessage = async (
       The websocket server should be able to handle multiple clients.
 
       Make this a separate router. 
+      Integrate it with the main fastapi router.
       `,
   };
 

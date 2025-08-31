@@ -1,7 +1,15 @@
 import asyncio
+import json
 import uuid
 
-from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
+from claude_code_sdk import (
+    ClaudeCodeOptions,
+    ClaudeSDKClient,
+    ContentBlock,
+    TextBlock,
+    ToolUseBlock,
+)
+from claude_code_sdk import Message as ClaudeSDKMessage
 from loguru import logger
 from pydantic import Field, ValidationError
 
@@ -67,6 +75,79 @@ class ClaudeSDKActor:
             stream_id=stream_id,
         ).model_dump_json()
 
+    async def chunk_processor(
+        self,
+        chunk: ClaudeSDKMessage,
+        request_id: str,
+        stream_id: str,
+        sid: str,
+        seq: int,
+    ) -> None:
+        if hasattr(chunk, "content"):
+            for block in chunk.content:
+                seq += 1
+                if isinstance(block, ContentBlock):
+                    if isinstance(block, TextBlock):
+                        envelope_to_send = Envelope(
+                            request_id=request_id,
+                            stream_id=stream_id,
+                            seq=seq,
+                            direction="s2c",
+                            actor="claude",
+                            action="stream",
+                            modifier="chunk",
+                            data={
+                                "delta": block.text,
+                            },
+                        )
+                        await sio.emit(
+                            "s2c.claude.stream.chunk",
+                            envelope_to_send.model_dump_json(),
+                            to=sid,
+                        )
+                if isinstance(block, ToolUseBlock):
+                    envelope_to_send = Envelope(
+                        request_id=request_id,
+                        stream_id=stream_id,
+                        seq=seq,
+                        direction="s2c",
+                        actor="claude",
+                        action="stream",
+                        modifier="chunk",
+                        data={
+                            "delta": "\n"
+                            + "```json"
+                            + "\n"
+                            + json.dumps(block.input)
+                            + "\n"
+                            + "```"
+                            + "\n",
+                        },
+                    )
+                    await sio.emit(
+                        "s2c.claude.stream.chunk",
+                        envelope_to_send.model_dump_json(),
+                        to=sid,
+                    )
+        if type(chunk).__name__ == "ResultMessage":
+            envelope_to_send = Envelope(
+                request_id=request_id,
+                stream_id=stream_id,
+                seq=seq,
+                direction="s2c",
+                actor="claude",
+                action="stream",
+                modifier="end",
+                data={
+                    "finish_reason": "stop",
+                },
+            )
+            await sio.emit(
+                "s2c.claude.stream.end",
+                envelope_to_send.model_dump_json(),
+                to=sid,
+            )
+
     async def stream_claude_code_sdk_chunks(
         self,
         sid: str,
@@ -96,43 +177,4 @@ class ClaudeSDKActor:
 
             seq = 0
             async for chunk in stream:
-                seq += 1
-                if hasattr(chunk, "content"):
-                    for block in chunk.content:
-                        if hasattr(block, "text"):
-                            logger.info(f"DEBUG: chunk: {block.text}")
-                            envelope_to_send = Envelope(
-                                request_id=request_id,
-                                stream_id=stream_id,
-                                seq=seq,
-                                direction="s2c",
-                                actor=actor,
-                                action="stream",
-                                modifier="chunk",
-                                data={
-                                    "delta": block.text,
-                                },
-                            )
-                            await sio.emit(
-                                f"s2c.{actor}.stream.chunk",
-                                envelope_to_send.model_dump_json(),
-                                to=sid,
-                            )
-                if type(chunk).__name__ == "ResultMessage":
-                    envelope_to_send = Envelope(
-                        request_id=request_id,
-                        stream_id=stream_id,
-                        seq=seq,
-                        direction="s2c",
-                        actor=actor,
-                        action="stream",
-                        modifier="end",
-                        data={
-                            "finish_reason": "stop",
-                        },
-                    )
-                    await sio.emit(
-                        f"s2c.{actor}.stream.end",
-                        envelope_to_send.model_dump_json(),
-                        to=sid,
-                    )
+                await self.chunk_processor(chunk, request_id, stream_id, sid, seq)
