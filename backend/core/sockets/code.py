@@ -1,12 +1,12 @@
-import asyncio
-import uuid
 from typing import Literal
 
 from loguru import logger
-from pydantic import Field, ValidationError
+from pydantic import Field
+
+from core.sockets.base import BaseActor
 
 from . import sio
-from .envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
+from .envelope_type import AliasedBaseModel
 from .streamer import stream_chunks_openai
 from .types import Message
 
@@ -100,79 +100,19 @@ class HistoricCodeRequest(AliasedBaseModel):
         return self.code_request.to_openai_messages() + self.history
 
 
+class CoderActor(BaseActor[HistoricCodeRequest]):
+    def __init__(self):
+        super().__init__(
+            actor_name="coder",
+            model=MODEL,
+            stream_chunks=stream_chunks_openai,
+        )
+
+    def prepare_messages(self, validated_request: HistoricCodeRequest) -> list[Message]:
+        return validated_request.to_openai_messages()
+
+
 @sio.on("c2s.coder.stream.start")
 async def request_code_stream(sid: str, envelope: dict) -> str:
-    print(
-        f"DEBUG: request_code_stream handler called with sid={sid}"
-    )  # This should show up
-    logger.info(f"request_code_stream {sid}")
-
-    try:
-        validated_envelope = Envelope[HistoricCodeRequest].model_validate(envelope)
-        if validated_envelope.request_id is None:
-            return AckFail(
-                ok=False,
-                error=Error(
-                    code="invalid_envelope",
-                    message="The envelope is missing request_id",
-                ),
-            ).model_dump_json()
-        if validated_envelope.data is None:
-            return AckFail(
-                ok=False,
-                error=Error(
-                    code="invalid_envelope",
-                    message="The envelope is missing data",
-                ),
-            ).model_dump_json()
-        validated_historic_code_request = HistoricCodeRequest.model_validate(
-            validated_envelope.data
-        )
-        if validated_historic_code_request.code_request is None:
-            return AckFail(
-                ok=False,
-                error=Error(
-                    code="invalid_envelope",
-                    message="The envelope is missing code context",
-                ),
-            ).model_dump_json()
-        validated_history = [
-            Message.model_validate(h) for h in validated_historic_code_request.history
-        ]
-        validated_historic_code_request.history = validated_history
-        validated_code_request = CodeRequest.model_validate(
-            validated_historic_code_request.code_request
-        )
-        full_code_request = HistoricCodeRequest(
-            history=validated_history,
-            code_request=validated_code_request,
-        )
-        messages_to_load = full_code_request.to_openai_messages()
-    except ValidationError as e:
-        logger.error(f"Validation error: {e}")
-        logger.error(f"Validation error details: {e.errors()}")
-        return AckFail(
-            ok=False,
-            error=Error(
-                code="invalid_envelope",
-                message="The envelope is not in the correct format",
-            ),
-        ).model_dump_json()
-    stream_id = str(uuid.uuid4())
-
-    asyncio.create_task(
-        stream_chunks_openai(
-            sid,
-            messages_to_load,
-            validated_envelope.request_id,
-            stream_id,
-            actor="coder",
-            model=MODEL,
-        )
-    )
-
-    return AckOk(
-        ok=True,
-        request_id=validated_envelope.request_id,
-        stream_id=stream_id,
-    ).model_dump_json()
+    coder_actor = CoderActor()
+    return coder_actor.handle_stream_start(sid, envelope, HistoricCodeRequest)
