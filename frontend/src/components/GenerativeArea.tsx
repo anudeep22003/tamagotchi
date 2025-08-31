@@ -73,7 +73,7 @@ export const GenerativeArea = () => {
       <Tabs
         value={currentTab}
         onValueChange={handleTabChange}
-        className="flex-1 flex flex-col"
+        className="flex-1 flex flex-col overflow-y-auto"
       >
         <div className="px-4 pt-2">
           <TabsList className="w-fit">
