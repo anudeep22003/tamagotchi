@@ -185,3 +185,12 @@ export const useClaudeMessages = () =>
       state.allMessages.filter((m) => m.type === "claude")
     )
   );
+
+export const useAvailableActors = () =>
+  useMessageStore(
+    useShallow((state) => {
+      return new Set(
+        state.allMessages.map((m) => m.type)
+      ) as Set<Actor>;
+    })
+  );

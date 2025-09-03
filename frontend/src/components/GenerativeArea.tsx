@@ -4,6 +4,7 @@ import {
   useWriterMessages,
   useMessageStore,
   useClaudeMessages,
+  useAvailableActors,
 } from "@/store/useMessageStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { TabContent } from "./generative/TabContent";
@@ -43,18 +44,7 @@ export const GenerativeArea = () => {
   const streamingActors = useMessageStore(
     (state) => state.streamingActors
   );
-
-  const availableTabs = useMemo(() => {
-    const tabs: Actor[] = [];
-    if (codeMessages.length > 0) tabs.push("coder");
-    if (writerMessages.length > 0) tabs.push("writer");
-    if (claudeMessages.length > 0) tabs.push("claude");
-    return tabs;
-  }, [
-    codeMessages.length,
-    writerMessages.length,
-    claudeMessages.length,
-  ]);
+  const availableTabs = Array.from(useAvailableActors());
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as Actor, true);
