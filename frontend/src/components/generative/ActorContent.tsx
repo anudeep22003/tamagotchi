@@ -47,14 +47,10 @@ export const ActorContent = memo(
       scrollToBottom();
     }, [messagesLength, lastMessageContent, scrollToBottom]);
 
-    const memoizedMessages = useMemo(() => {
-      return renderTabContent(type);
-    }, [renderTabContent, type]);
-
     return (
       <TabsContent key={type} value={type} className="flex-1 mt-0">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {memoizedMessages}
+          {renderTabContent(type)}
           <div ref={messageEndRef} />
         </div>
       </TabsContent>

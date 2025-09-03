@@ -190,7 +190,9 @@ export const useAvailableActors = () =>
   useMessageStore(
     useShallow((state) => {
       return new Set(
-        state.allMessages.map((m) => m.type)
-      ) as Set<Actor>;
+        state.allMessages
+          .map((m) => m.type)
+          .filter((type) => type !== "human")
+      ) as Set<Exclude<Actor, "human">>;
     })
   );

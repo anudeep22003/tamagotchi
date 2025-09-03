@@ -1,10 +1,10 @@
-import type {
-  BaseMessage,
-} from "@/store/useMessageStore";
+import type { BaseMessage } from "@/store/useMessageStore";
 import type { Actor } from "@/types/envelopeType";
 import { WriterMessage } from "./WriterMessage";
 import { ClaudeMessage } from "./ClaudeMessage";
 import { CodeMessage } from "./CodeMessage";
+
+export type streamingActors = Exclude<Actor, "assistant" | "human">;
 
 interface ActorRegistryConfig {
   label: Actor;
@@ -16,7 +16,7 @@ interface ActorRegistryConfig {
 }
 
 export const actorRegistry: Record<
-  Exclude<Actor, "assistant">,
+  streamingActors,
   ActorRegistryConfig
 > = {
   writer: {

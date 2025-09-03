@@ -1,5 +1,5 @@
-import { Loader2 } from "lucide-react";
 import type { Actor } from "@/types/envelopeType";
+import { Loader2 } from "lucide-react";
 
 interface TabLabelProps {
   actor: Actor;
@@ -7,19 +7,13 @@ interface TabLabelProps {
 }
 
 export const TabLabel = ({ actor, isStreaming }: TabLabelProps) => {
-  const labels: Record<Actor, string> = {
-    assistant: "Assistant",
-    coder: "Code",
-    writer: "Writer",
-    claude: "Claude",
-  };
-
+  if (actor === "assistant") {
+    return null;
+  }
   return (
     <div className="flex items-center gap-2">
-      {labels[actor]}
-      {isStreaming && (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      )}
+      {actor}
+      {isStreaming && <Loader2 className="h-3 w-3 animate-spin" />}
     </div>
   );
 };

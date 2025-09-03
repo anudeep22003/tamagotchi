@@ -1,5 +1,9 @@
 export type Direction = "c2s" | "s2c";
-export type Actor = "assistant" | "coder" | "writer" | "claude";
+export type Actor =
+  | "assistant"
+  | "coder"
+  | "writer"
+  | "claude"
 export type Action = "stream";
 export type Modifier = "start" | "chunk" | "end";
 
