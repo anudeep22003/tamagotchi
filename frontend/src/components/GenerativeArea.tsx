@@ -1,16 +1,13 @@
-import { useMemo } from "react";
 import {
-  useCodeMessages,
-  useWriterMessages,
   useMessageStore,
-  useClaudeMessages,
   useAvailableActors,
+  type BaseMessage,
 } from "@/store/useMessageStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { TabContent } from "./generative/TabContent";
 import { TabControls } from "./generative/TabControls";
 import { TabLabel } from "./generative/TabLabel";
 import type { Actor } from "@/types/envelopeType";
+import { actorRegistry } from "./generative/Registry";
 
 const GenerativeHeader = () => {
   return (
@@ -35,9 +32,7 @@ const EmptyState = () => {
 };
 
 export const GenerativeArea = () => {
-  const codeMessages = useCodeMessages();
-  const writerMessages = useWriterMessages();
-  const claudeMessages = useClaudeMessages();
+  const allMessages = useMessageStore((state) => state.allMessages);
 
   const activeTab = useMessageStore((state) => state.activeTab);
   const setActiveTab = useMessageStore((state) => state.setActiveTab);
@@ -50,12 +45,25 @@ export const GenerativeArea = () => {
     setActiveTab(value as Actor, true);
   };
 
-  // Use the first available tab as default
   const currentTab = activeTab || availableTabs[0] || "coder";
 
   if (availableTabs.length === 0) {
     return <EmptyState />;
   }
+
+  const renderTabContent = (
+    actor: Actor,
+    allMessages: BaseMessage[]
+  ) => {
+    if (actor === "assistant") {
+      return null;
+    }
+    const Component = actorRegistry[actor].component;
+    const messages = actorRegistry[actor].messageSelector(allMessages);
+    return messages.map((message) => (
+      <Component key={message.id} message={message} />
+    ));
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -77,24 +85,15 @@ export const GenerativeArea = () => {
             ))}
           </TabsList>
         </div>
-
-        {availableTabs.includes("coder" as Actor) && (
-          <TabsContent value="coder" className="flex-1 mt-0">
-            <TabContent messages={codeMessages} type="coder" />
+        {availableTabs.map((actor) => (
+          <TabsContent
+            key={actor}
+            value={actor}
+            className="flex-1 mt-0"
+          >
+            {renderTabContent(actor, allMessages)}
           </TabsContent>
-        )}
-
-        {availableTabs.includes("writer" as Actor) && (
-          <TabsContent value="writer" className="flex-1 mt-0">
-            <TabContent messages={writerMessages} type="writer" />
-          </TabsContent>
-        )}
-
-        {availableTabs.includes("claude" as Actor) && (
-          <TabsContent value="claude" className="flex-1 mt-0">
-            <TabContent messages={claudeMessages} type="claude" />
-          </TabsContent>
-        )}
+        ))}
       </Tabs>
 
       <div className="p-4 border-t border-border">

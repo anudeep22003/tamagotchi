@@ -19,7 +19,7 @@ export type MessageType = "human" | Actor;
 
 export type TypedMessage = BaseMessage;
 
-interface MessageState {
+export interface MessageState {
   allMessages: TypedMessage[];
   activeTab: Actor | null;
   isTabManuallySelected: boolean;
