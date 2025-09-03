@@ -1,13 +1,12 @@
 import {
   useMessageStore,
   useAvailableActors,
-  type BaseMessage,
 } from "@/store/useMessageStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { TabControls } from "./generative/TabControls";
 import { TabLabel } from "./generative/TabLabel";
 import type { Actor } from "@/types/envelopeType";
-import { actorRegistry } from "./generative/Registry";
+import { ActorContent } from "./generative/ActorContent";
 
 const GenerativeHeader = () => {
   return (
@@ -51,20 +50,6 @@ export const GenerativeArea = () => {
     return <EmptyState />;
   }
 
-  const renderTabContent = (
-    actor: Actor,
-    allMessages: BaseMessage[]
-  ) => {
-    if (actor === "assistant") {
-      return null;
-    }
-    const Component = actorRegistry[actor].component;
-    const messages = actorRegistry[actor].messageSelector(allMessages);
-    return messages.map((message) => (
-      <Component key={message.id} message={message} />
-    ));
-  };
-
   return (
     <div className="flex flex-col h-full bg-background">
       <GenerativeHeader />
@@ -91,7 +76,7 @@ export const GenerativeArea = () => {
             value={actor}
             className="flex-1 mt-0"
           >
-            {renderTabContent(actor, allMessages)}
+            <ActorContent type={actor} allMessages={allMessages} />
           </TabsContent>
         ))}
       </Tabs>
