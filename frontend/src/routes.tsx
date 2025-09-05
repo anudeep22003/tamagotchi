@@ -1,8 +1,8 @@
-import HumanAiWorkspace from "./pages/HumanAiWorkspace";
+import AddRepo from "./pages/AddRepo";
 
 export const routes = [
   {
     path: "/",
-    element: <HumanAiWorkspace />,
-  }
+    element: <AddRepo />,
+  },
 ];
