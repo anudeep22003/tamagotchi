@@ -93,25 +93,29 @@ const MermaidDiagram = ({
       svgContent.includes('aria-roledescription="error"') ||
       svgContent.includes('class="error-icon"') ||
       svgContent.includes('class="error-text"') ||
-      svgContent.includes('Syntax error in text') ||
-      svgContent.includes('Error:')
+      svgContent.includes("Syntax error in text") ||
+      svgContent.includes("Error:")
     );
   };
 
   // Function to extract error message from SVG
   const extractErrorMessage = (svgContent: string): string => {
     // Try to extract error text from the SVG
-    const errorTextMatch = svgContent.match(/<text[^>]*class="error-text"[^>]*>([^<]+)<\/text>/);
+    const errorTextMatch = svgContent.match(
+      /<text[^>]*class="error-text"[^>]*>([^<]+)<\/text>/
+    );
     if (errorTextMatch) {
       return errorTextMatch[1];
     }
-    
+
     // Fallback: look for any text that might be an error
-    const textMatches = svgContent.match(/<text[^>]*>([^<]*error[^<]*)<\/text>/i);
+    const textMatches = svgContent.match(
+      /<text[^>]*>([^<]*error[^<]*)<\/text>/i
+    );
     if (textMatches) {
       return textMatches[1];
     }
-    
+
     return "Mermaid diagram syntax error";
   };
 
@@ -141,7 +145,10 @@ const MermaidDiagram = ({
             const errorMessage = extractErrorMessage(svg);
             setError(errorMessage);
             setIsLoading(false);
-            console.warn("Mermaid diagram rendered as error SVG:", errorMessage);
+            console.warn(
+              "Mermaid diagram rendered as error SVG:",
+              errorMessage
+            );
             return;
           }
 

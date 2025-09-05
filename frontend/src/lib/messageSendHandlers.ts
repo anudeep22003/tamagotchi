@@ -172,7 +172,7 @@ export const sendGitHubTeardownMessage = async (
 ) => {
   const data = {
     query: "",
-    repoUrl: "https://github.com/Sidebrain/interview-prep-agent-public",
+    repoUrl: inputText,
   };
 
   const envelope = createStreamStartEnvelope("claude", data);
