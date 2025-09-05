@@ -64,7 +64,6 @@ class ClaudeSDKActor:
     def handle_stream_start(self, sid: str, envelope: dict) -> str:
         try:
             validated_envelope = Envelope[ClaudeSDKRequest].model_validate(envelope)  # type: ignore
-            logger.info(f"Validated envelope: {validated_envelope}")
 
             if validated_envelope.request_id is None:
                 return AckFail(
@@ -123,7 +122,6 @@ class ClaudeSDKActor:
         sid: str,
         seq: int,
     ) -> None:
-        logger.info(f"Processing chunk: #{seq}")
         if hasattr(chunk, "content"):
             for block in chunk.content:
                 seq += 1
@@ -216,13 +214,11 @@ class ClaudeSDKActor:
             await client.query(
                 user_query,
             )
-            logger.info("creating a stream to receive response")
 
             stream = client.receive_response()
 
             seq = 0
             async for chunk in stream:
-                logger.info(f"Received chunk: #{seq}")
                 await self.chunk_processor(chunk, request_id, stream_id, sid, seq)
 
     async def handle_repo_teardown(
@@ -240,7 +236,6 @@ class ClaudeSDKActor:
 
             if cached_file:
                 # Cached version found, stream it directly
-                logger.info(f"Streaming cached teardown: {cached_file}")
                 writer_actor = WriterActor()
 
                 # Create a wrapper that passes the file path
@@ -257,7 +252,6 @@ class ClaudeSDKActor:
                 )
             else:
                 # Need to generate teardown
-                logger.info(f"Generating new teardown for repo in: {temp_dir}")
 
                 # Extract repo info for final file naming
                 owner, repo_name = self.repo_processor.extract_repo_info(repo_url)
@@ -265,8 +259,6 @@ class ClaudeSDKActor:
 
                 # Run Claude SDK teardown
                 teardown_prompt = self.load_teardown_prompt()
-                logger.info(f"Teardown prompt size: {len(teardown_prompt)}")
-                logger.info("Starting Claude SDK process")
                 await self.stream_claude_code_sdk_chunks(
                     sid,
                     teardown_prompt,
@@ -282,8 +274,6 @@ class ClaudeSDKActor:
                     saved_file = self.repo_processor.save_teardown(
                         temp_dir, repo_name, repo_hash
                     )
-                    logger.info(f"Saved teardown to: {saved_file}")
-
                     # Stream the saved file to client
                     writer_actor = WriterActor()
 
