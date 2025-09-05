@@ -5,7 +5,7 @@ description = "Tamagotchi backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "claude-code-sdk>=0.0.20",
+    "claude-code-sdk",
     "click>=8.2.1",
     "dotenv>=0.9.9",
     "fastapi>=0.116.1",
@@ -98,3 +98,6 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.uv.sources]
+claude-code-sdk = { git = "https://github.com/anthropics/claude-code-sdk-python.git" }
