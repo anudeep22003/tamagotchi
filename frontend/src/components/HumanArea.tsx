@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useHumanAreaMessages } from "@/store/useMessageStore";
-import { useEffect, useRef, useMemo, useCallback, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  useState,
+} from "react";
 import { GitHubUrlInput } from "./GitHubUrlInput";
 import { MessageInput } from "./MessageInput";
 import { MarkdownRenderer } from "./MarkdownRenderer";
@@ -9,12 +15,15 @@ import { MarkdownRenderer } from "./MarkdownRenderer";
 const GitHubHeader = () => {
   return (
     <div className="p-4 border-b border-border">
-      <h2 className="text-lg font-medium">🔍 GitHub Repository Teardown</h2>
-      <p className="text-sm text-muted-foreground mt-1">Analyze any public GitHub repository</p>
+      <h2 className="text-lg font-medium">
+        🔍 GitHub Repository Teardown
+      </h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        Analyze any public GitHub repository
+      </p>
     </div>
   );
 };
-
 
 const MessageList = () => {
   const humanAreaMessages = useHumanAreaMessages();
@@ -114,7 +123,13 @@ const RecordingControls = () => {
   );
 };
 
-const GitHubInputSection = ({ onSubmit, disabled }: { onSubmit: (url: string) => void; disabled: boolean }) => {
+const GitHubInputSection = ({
+  onSubmit,
+  disabled,
+}: {
+  onSubmit: (url: string) => void;
+  disabled: boolean;
+}) => {
   return (
     <div className="p-4 border-t border-border">
       <GitHubUrlInput onSubmit={onSubmit} disabled={disabled} />
@@ -123,42 +138,51 @@ const GitHubInputSection = ({ onSubmit, disabled }: { onSubmit: (url: string) =>
 };
 
 export const HumanArea = () => {
-  const [currentMode, setCurrentMode] = useState<'github' | 'conversation'>('github');
+  const [currentMode, setCurrentMode] = useState<
+    "github" | "conversation"
+  >("github");
   const [isProcessing, setIsProcessing] = useState(false);
-  const { handleClaudeSendClick, setInputText } = useAppContext();
+  const { setInputText, handleGitHubTeardownSendClick } =
+    useAppContext();
 
-  const handleGitHubSubmit = useCallback(async (url: string) => {
-    setIsProcessing(true);
-    setInputText(`Please analyze this GitHub repository: ${url}`);
-    
-    // Switch to conversation mode and trigger analysis
-    setCurrentMode('conversation');
-    
-    try {
-      await handleClaudeSendClick();
-    } catch (error) {
-      console.error('Failed to start analysis:', error);
-      // Return to GitHub input mode on error
-      setCurrentMode('github');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [handleClaudeSendClick, setInputText]);
+  const handleGitHubSubmit = useCallback(
+    async (url: string) => {
+      setIsProcessing(true);
+      setInputText(url);
+
+      // Switch to conversation mode and trigger analysis
+      setCurrentMode("conversation");
+
+      try {
+        await handleGitHubTeardownSendClick();
+      } catch (error) {
+        console.error("Failed to start analysis:", error);
+        // Return to GitHub input mode on error
+        setCurrentMode("github");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [handleGitHubTeardownSendClick, setInputText]
+  );
 
   const handleBackToGitHub = useCallback(() => {
     if (!isProcessing) {
-      setCurrentMode('github');
-      setInputText('');
+      setCurrentMode("github");
+      setInputText("");
     }
   }, [isProcessing, setInputText]);
 
-  if (currentMode === 'github') {
+  if (currentMode === "github") {
     return (
       <div className="flex flex-col h-full bg-background border-r border-border">
         <GitHubHeader />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-md px-4">
-            <GitHubInputSection onSubmit={handleGitHubSubmit} disabled={isProcessing} />
+            <GitHubInputSection
+              onSubmit={handleGitHubSubmit}
+              disabled={isProcessing}
+            />
           </div>
         </div>
       </div>
@@ -170,7 +194,11 @@ export const HumanArea = () => {
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h2 className="text-lg font-medium">Conversation</h2>
         {!isProcessing && (
-          <Button variant="outline" size="sm" onClick={handleBackToGitHub}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBackToGitHub}
+          >
             ← New Analysis
           </Button>
         )}

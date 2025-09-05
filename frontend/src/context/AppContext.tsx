@@ -16,6 +16,7 @@ import {
   sendChatMessage,
   sendClaudeMessage,
   sendCodeMessage,
+  sendGitHubTeardownMessage,
   sendWriterMessage,
 } from "@/lib/messageSendHandlers";
 
@@ -28,6 +29,7 @@ interface AppContextType {
   handleCodeSendClick: () => Promise<void>;
   handleWriterSendClick: () => Promise<void>;
   handleClaudeSendClick: () => Promise<void>;
+  handleGitHubTeardownSendClick: () => Promise<void>;
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
@@ -85,6 +87,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [createMessageHandler]
   );
 
+  const handleGitHubTeardownSendClick = useCallback(
+    () => createMessageHandler(sendGitHubTeardownMessage)(),
+    [createMessageHandler]
+  );
+
   // Periodic cleanup of old messages
   useEffect(() => {
     const interval = setInterval(() => {
@@ -110,6 +117,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         handleWriterSendClick,
         handleClaudeSendClick,
         handleInputSendClick,
+        handleGitHubTeardownSendClick,
         isConnected,
         emit,
         socket,

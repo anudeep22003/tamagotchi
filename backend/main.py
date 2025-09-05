@@ -17,6 +17,13 @@ REQUIRED_ENV_VARS = [
     "OPENAI_API_KEY",
 ]
 
+## OPTIONAL ENV VARS (with defaults)
+OPTIONAL_ENV_VARS = {
+    "CLAUDE_MODEL": "claude-3-5-sonnet-20241022",
+    "TEMP_DIR": None,  # Uses system default
+    "OPERATION_TIMEOUT": "3600",  # 1 hour in seconds
+}
+
 
 ## FUNCTIONS
 def check_env_vars() -> bool:
@@ -25,6 +32,13 @@ def check_env_vars() -> bool:
         if not os.getenv(var):
             return False
     return True
+
+
+def set_default_env_vars() -> None:
+    """Set default values for optional environment variables if not set."""
+    for var, default_value in OPTIONAL_ENV_VARS.items():
+        if default_value is not None and not os.getenv(var):
+            os.environ[var] = default_value
 
 
 @asynccontextmanager
@@ -36,6 +50,10 @@ async def lifecycle_manager(self) -> AsyncGenerator[None, None]:
     logger.debug("Loading Env Variables")
     if not check_env_vars():
         raise ValueError("Missing required environment variables")
+    
+    # Set default values for optional environment variables
+    set_default_env_vars()
+    logger.debug("Environment variables configured")
 
     # register socketio handlers
     register_sio_handlers()

@@ -161,3 +161,25 @@ export const sendClaudeMessage = async (
     handleStreamAck(ack, "claude", createStreamMessage)
   );
 };
+
+export const sendGitHubTeardownMessage = async (
+  inputText: string,
+  setInputText: (text: string) => void,
+  emit: EmitCallback,
+  _addMessage: AddMessage,
+  _humanAreaMessages: TypedMessage[],
+  createStreamMessage: CreateStreamMessage
+) => {
+  const data = {
+    query: "",
+    repoUrl: "https://github.com/Sidebrain/interview-prep-agent-public",
+  };
+
+  const envelope = createStreamStartEnvelope("claude", data);
+
+  setInputText("");
+
+  emit(`c2s.claude.stream.start`, envelope, (ack) =>
+    handleStreamAck(ack, "claude", createStreamMessage)
+  );
+};
