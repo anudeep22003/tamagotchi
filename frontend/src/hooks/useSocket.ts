@@ -1,9 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import io from "socket.io-client";
-import { BACKEND_URL } from "@/constants";
+// import { BACKEND_URL } from "@/constants";
 import { Socket } from "socket.io-client";
 import type { Actor, Envelope } from "@/types/envelopeType";
 import { useMessageStore } from "@/store/useMessageStore";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
