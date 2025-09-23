@@ -11,6 +11,7 @@ from loguru import logger
 
 from core.clients.github_client import get_github_client
 from core.clients.storage import StorageClient
+from core.config import MAX_REPO_SIZE_MB
 from core.teardown.types import (
     CommitInfo,
     GitHubRepoError,
@@ -203,28 +204,25 @@ class RepoProcessor:
                 error_type="unknown",
             )
 
-    def should_clone_repo(self, metadata: Dict[str, Any]) -> tuple[bool, str]:
+    def should_clone_repo(self, metadata: GitHubRepoResult) -> tuple[bool, str]:
         """
         Determine if a repository should be cloned based on metadata.
         Returns: (should_clone, reason)
         """
-        if not metadata.get("accessible", True):
-            return (
-                False,
-                f"Repository not accessible: {metadata.get('error', 'Unknown error')}",
-            )
+        if isinstance(metadata, GitHubRepoError):
+            return False, f"Repository not accessible: {metadata.error}"
 
         # Check if repository is too large (e.g., > 500MB)
-        size_kb = metadata.get("size", 0)
-        if size_kb > 500 * 1024:  # 500MB in KB
+        size_kb = metadata.size
+        if size_kb > MAX_REPO_SIZE_MB * 1024:
             return False, f"Repository too large: {size_kb / 1024:.1f}MB"
 
         # Check if repository is archived
-        if metadata.get("archived", False):
-            logger.warning(f"Repository {metadata.get('full_name')} is archived")
+        if metadata.archived:
+            logger.warning(f"Repository {metadata.full_name} is archived")
 
         # Check if repository is disabled
-        if metadata.get("disabled", False):
+        if metadata.disabled:
             return False, "Repository is disabled"
 
         return True, "Repository is suitable for cloning"
