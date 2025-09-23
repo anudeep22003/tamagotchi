@@ -1,4 +1,3 @@
-import hashlib
 import re
 import shutil
 import tempfile
@@ -204,13 +203,11 @@ class RepoProcessor:
                 error_type="unknown",
             )
 
-    def should_clone_repo(self, metadata: GitHubRepoResult) -> tuple[bool, str]:
+    def should_clone_repo(self, metadata: GitHubRepoMetadata) -> tuple[bool, str]:
         """
         Determine if a repository should be cloned based on metadata.
         Returns: (should_clone, reason)
         """
-        if isinstance(metadata, GitHubRepoError):
-            return False, f"Repository not accessible: {metadata.error}"
 
         # Check if repository is too large (e.g., > 500MB)
         size_kb = metadata.size
@@ -228,16 +225,14 @@ class RepoProcessor:
         return True, "Repository is suitable for cloning"
 
     def compute_repo_hash(
-        self, owner: str, repo_name: str, commit_sha: Optional[str] = None
+        self,
+        metadata: GitHubRepoMetadata,
     ) -> str:
         """
-        Compute hash for repo caching based on owner/repo_name and optionally commit SHA.
+        Use the latest commit SHA for caching.
+        The SHA is globally unique across github, hence a valid hash candidate.
         """
-        if commit_sha:
-            repo_identifier = f"{owner}/{repo_name}@{commit_sha[:8]}"
-        else:
-            repo_identifier = f"{owner}/{repo_name}"
-        return hashlib.md5(repo_identifier.encode()).hexdigest()[:8]
+        return metadata.latest_commit.sha
 
     def find_cached_teardown(self, repo_name: str, repo_hash: str) -> Optional[Path]:
         """Check if a cached teardown exists for this repo."""
@@ -331,9 +326,15 @@ class RepoProcessor:
             metadata = self.get_github_repo_metadata(owner, repo_name)
 
             # Check if we should proceed with cloning
+            if isinstance(metadata, GitHubRepoError):
+                raise RuntimeError(f"Repository not accessible: {metadata.error}")
+
             should_clone, reason = self.should_clone_repo(metadata)
+
             if not should_clone:
                 raise RuntimeError(reason)
+
+            repo_hash = self.compute_repo_hash(metadata)
 
             # Use latest commit SHA for accurate caching
             latest_commit_sha = metadata.get("latest_commit", {}).get("sha")
