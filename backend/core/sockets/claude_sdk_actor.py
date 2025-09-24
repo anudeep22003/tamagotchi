@@ -130,48 +130,49 @@ class ClaudeSDKActor:
                             envelope_to_send.model_dump_json(),
                             to=sid,
                         )
-                if isinstance(block, ToolUseBlock):
-                    envelope_to_send = Envelope(
-                        request_id=request_id,
-                        stream_id=stream_id,
-                        seq=seq,
-                        direction="s2c",
-                        actor="claude",
-                        action="stream",
-                        modifier="chunk",
-                        data={
-                            "delta": "\n"
-                            + "```json"
-                            + "\n"
-                            + json.dumps(block.input)
-                            + "\n"
-                            + "```"
-                            + "\n",
-                        },
-                    )
-                    await sio.emit(
-                        "s2c.claude.stream.chunk",
-                        envelope_to_send.model_dump_json(),
-                        to=sid,
-                    )
-        if type(chunk).__name__ == "ResultMessage":
-            envelope_to_send = Envelope(
-                request_id=request_id,
-                stream_id=stream_id,
-                seq=seq,
-                direction="s2c",
-                actor="claude",
-                action="stream",
-                modifier="end",
-                data={
-                    "finish_reason": "stop",
-                },
-            )
-            await sio.emit(
-                "s2c.claude.stream.end",
-                envelope_to_send.model_dump_json(),
-                to=sid,
-            )
+
+                    if isinstance(block, ToolUseBlock):
+                        envelope_to_send = Envelope(
+                            request_id=request_id,
+                            stream_id=stream_id,
+                            seq=seq,
+                            direction="s2c",
+                            actor="claude",
+                            action="stream",
+                            modifier="chunk",
+                            data={
+                                "delta": "\n"
+                                + "```json"
+                                + "\n"
+                                + json.dumps(block.input)
+                                + "\n"
+                                + "```"
+                                + "\n",
+                            },
+                        )
+                        await sio.emit(
+                            "s2c.claude.stream.chunk",
+                            envelope_to_send.model_dump_json(),
+                            to=sid,
+                        )
+            if type(chunk).__name__ == "ResultMessage":
+                envelope_to_send = Envelope(
+                    request_id=request_id,
+                    stream_id=stream_id,
+                    seq=seq,
+                    direction="s2c",
+                    actor="claude",
+                    action="stream",
+                    modifier="end",
+                    data={
+                        "finish_reason": "stop",
+                    },
+                )
+                await sio.emit(
+                    "s2c.claude.stream.end",
+                    envelope_to_send.model_dump_json(),
+                    to=sid,
+                )
 
     async def stream_claude_code_sdk_chunks(
         self,
@@ -203,7 +204,11 @@ class ClaudeSDKActor:
 
             seq = 0
             async for chunk in stream:
-                await self.chunk_processor(chunk, request_id, stream_id, sid, seq)
+                logger.info(f"Chunk: {chunk}")
+                try:
+                    await self.chunk_processor(chunk, request_id, stream_id, sid, seq)
+                except Exception as e:
+                    logger.error(f"Error in chunk processor: {e}")
 
     async def handle_repo_teardown(
         self,

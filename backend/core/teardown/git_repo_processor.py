@@ -358,9 +358,10 @@ class RepoProcessor:
             repo_hash = self.compute_repo_hash(metadata)
 
             # Check for cached version
-            if self.check_if_repo_folder_exists(metadata):
+            cached_file_path = self.find_cached_teardown(metadata, repo_hash)
+            if cached_file_path:
                 return ProcessRepoResult(
-                    cached_file_path=self.find_cached_teardown(metadata, repo_hash),
+                    cached_file_path=cached_file_path,
                     temp_dir=None,
                     metadata=metadata,
                 )
