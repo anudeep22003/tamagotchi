@@ -16,10 +16,12 @@ import {
   getValidationStatus,
 } from "@/lib/githubValidation";
 import { Github, Zap } from "lucide-react";
+import { useRepoContext } from "@/pages/AddRepo";
 
 export const RepositoryInput = () => {
   const { inputText, setInputText, handleGitHubTeardownSendClick } =
     useAppContext();
+  const { setStatus } = useRepoContext();
   const inputRef = useRef<HTMLInputElement>(null);
   const [validationState, setValidationState] =
     useState<ValidationState>({
@@ -101,8 +103,9 @@ export const RepositoryInput = () => {
   const handleSubmit = useCallback(() => {
     if (isSubmitEnabled) {
       handleGitHubTeardownSendClick();
+      setStatus("started");
     }
-  }, [isSubmitEnabled, handleGitHubTeardownSendClick]);
+  }, [isSubmitEnabled, handleGitHubTeardownSendClick, setStatus]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
