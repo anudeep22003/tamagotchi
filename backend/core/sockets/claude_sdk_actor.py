@@ -234,46 +234,50 @@ class ClaudeSDKActor:
             to=sid,
             callback=lambda x: logger.info(f"Stream start sent, received ack: {x}"),
         )
-        # seq = 0
-        # with open(analysis_file_path, "r") as f:
-        #     content = f.read()
-        # stream = content.split("\n")
-        # for chunk in stream:
-        #     envelope_to_send = Envelope(
-        #         request_id=request_id,
-        #         stream_id=stream_id,
-        #         seq=seq,
-        #         direction="s2c",
-        #         actor="writer",
-        #         action="stream",
-        #         modifier="chunk",
-        #         data={
-        #             "delta": chunk,
-        #         },
-        #     )
-        #     await sio.emit(
-        #         "s2c.writer.stream.chunk",
-        #         envelope_to_send.model_dump_json(),
-        #         to=sid,
-        #     )
-        #     seq += 1
-        # envelope_to_send = Envelope(
-        #     request_id=request_id,
-        #     stream_id=stream_id,
-        #     seq=1,
-        #     direction="s2c",
-        #     actor="writer",
-        #     action="stream",
-        #     modifier="end",
-        #     data={
-        #         "finish_reason": "stop",
-        #     },
-        # )
-        # await sio.emit(
-        #     "s2c.writer.stream.end",
-        #     envelope_to_send.model_dump_json(),
-        #     to=sid,
-        # )
+        seq = 0
+        with open(analysis_file_path, "r") as f:
+            content = f.read()
+        # Split content into 100 word chunks
+        size = 10
+        words = content.split()
+        stream = [" ".join(words[i : i + size]) for i in range(0, len(words), size)]
+        for chunk in stream:
+            envelope_to_send = Envelope(
+                request_id=request_id,
+                stream_id=stream_id,
+                seq=seq,
+                direction="s2c",
+                actor="writer",
+                action="stream",
+                modifier="chunk",
+                data={
+                    "delta": chunk,
+                },
+            )
+            await sio.emit(
+                "s2c.writer.stream.chunk",
+                envelope_to_send.model_dump_json(),
+                to=sid,
+            )
+            seq += 1
+            await asyncio.sleep(0.1)
+        envelope_to_send = Envelope(
+            request_id=request_id,
+            stream_id=stream_id,
+            seq=1,
+            direction="s2c",
+            actor="writer",
+            action="stream",
+            modifier="end",
+            data={
+                "finish_reason": "stop",
+            },
+        )
+        await sio.emit(
+            "s2c.writer.stream.end",
+            envelope_to_send.model_dump_json(),
+            to=sid,
+        )
 
     async def handle_repo_teardown(
         self,

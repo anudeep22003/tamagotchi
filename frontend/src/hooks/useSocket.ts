@@ -16,6 +16,10 @@ export const useSocket = () => {
     (state) => state.removeStreamingActor
   );
 
+  const createStreamMessage = useMessageStore(
+    (state) => state.createStreamMessage
+  );
+
   const onStreamChunk = useCallback(
     (envelope: Envelope<{ delta: string }>) => {
       updateStreamingMessage(envelope);
@@ -117,21 +121,31 @@ export const useSocket = () => {
     // when server starts
     socket.on(
       "s2c.writer.stream.start",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (rawMessage: string, callback: (response: any) => void) => {
         try {
-          const envelope_received: Envelope<{
+          const parsed_envelope: Envelope<{
             delta: "start";
           }> = JSON.parse(rawMessage);
-          console.log(
-            "server initiated a stream start, true bidirectional yayy"
+
+          if (!parsed_envelope.streamId || !parsed_envelope.requestId) {
+            throw new Error(
+              `Stream ID ${parsed_envelope.streamId} or request ID ${parsed_envelope.requestId} is missing`
+            );
+          }
+
+          createStreamMessage(
+            parsed_envelope.streamId,
+            parsed_envelope.requestId,
+            "writer"
           );
-          console.log("s2c.writer.stream.start", envelope_received);
+          console.log("created stream message", parsed_envelope);
 
           // ✅ Send acknowledgement using the callback
           callback({
             ok: true,
-            streamId: envelope_received.streamId,
-            requestId: envelope_received.requestId,
+            streamId: parsed_envelope.streamId,
+            requestId: parsed_envelope.requestId,
           });
         } catch (error) {
           console.error(
@@ -152,7 +166,7 @@ export const useSocket = () => {
     return () => {
       socket.disconnect();
     };
-  }, [onStreamChunk, onStreamEnd]);
+  }, [onStreamChunk, onStreamEnd, createStreamMessage]);
 
   return {
     isConnected,
