@@ -213,6 +213,7 @@ class ClaudeSDKActor:
     async def close_claude_stream(
         self, sid: str, request_id: str, stream_id: str
     ) -> None:
+        logger.info(f"Closing Claude stream: {stream_id}")
         envelope_to_send = Envelope(
             request_id=request_id,
             stream_id=stream_id,
@@ -234,7 +235,6 @@ class ClaudeSDKActor:
         self, sid: str, request_id: str, stream_id: str, analysis_file_path: Path
     ) -> None:
         """Stream the cached analysis file in the temp directory."""
-        await self.close_claude_stream(sid, request_id, stream_id)
         logger.info(f"Streaming cached analysis file: {analysis_file_path}")
         stream_id = str(uuid.uuid4())
         # send a stream start
@@ -304,9 +304,11 @@ class ClaudeSDKActor:
         stream_id: str,
     ) -> None:
         """Handle repository teardown process."""
+        repo_directory = None
         try:
             result = self.repo_processor.process_repo_url(repo_url)
             if result.cached_file_path:
+                await self.close_claude_stream(sid, request_id, stream_id)
                 await self.stream_cached_analysis(
                     sid, request_id, stream_id, result.cached_file_path
                 )
@@ -352,4 +354,3 @@ class ClaudeSDKActor:
             # Cleanup temp directory
             if repo_directory:
                 self.repo_processor.cleanup_temp_dir(repo_directory)
-            pass
