@@ -210,10 +210,31 @@ class ClaudeSDKActor:
                 except Exception as e:
                     logger.error(f"Error in chunk processor: {e}")
 
+    async def close_claude_stream(
+        self, sid: str, request_id: str, stream_id: str
+    ) -> None:
+        envelope_to_send = Envelope(
+            request_id=request_id,
+            stream_id=stream_id,
+            direction="s2c",
+            actor="claude",
+            action="stream",
+            modifier="end",
+            data={
+                "finish_reason": "stop",
+            },
+        )
+        await sio.emit(
+            "s2c.claude.stream.end",
+            envelope_to_send.model_dump_json(),
+            to=sid,
+        )
+
     async def stream_cached_analysis(
         self, sid: str, request_id: str, stream_id: str, analysis_file_path: Path
     ) -> None:
         """Stream the cached analysis file in the temp directory."""
+        await self.close_claude_stream(sid, request_id, stream_id)
         logger.info(f"Streaming cached analysis file: {analysis_file_path}")
         stream_id = str(uuid.uuid4())
         # send a stream start
@@ -237,11 +258,7 @@ class ClaudeSDKActor:
         seq = 0
         with open(analysis_file_path, "r") as f:
             content = f.read()
-        # Split content into 100 word chunks
-        size = 10
-        words = content.split()
-        stream = [" ".join(words[i : i + size]) for i in range(0, len(words), size)]
-        for chunk in stream:
+        for chunk in content:
             envelope_to_send = Envelope(
                 request_id=request_id,
                 stream_id=stream_id,
@@ -260,7 +277,7 @@ class ClaudeSDKActor:
                 to=sid,
             )
             seq += 1
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.001)
         envelope_to_send = Envelope(
             request_id=request_id,
             stream_id=stream_id,
