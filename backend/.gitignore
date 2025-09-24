@@ -63,3 +63,5 @@ storage/
 # Misc
 CLAUDE.md
 .claude/
+scratch.py
+.env*

@@ -55,6 +55,7 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "data",
 ]
 
 # Same as Black.
@@ -62,7 +63,7 @@ line-length = 88
 indent-width = 4
 
 # Assume Python 3.9
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.

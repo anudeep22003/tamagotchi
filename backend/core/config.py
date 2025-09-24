@@ -19,6 +19,8 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 BUCKET_NAME = os.getenv("BUCKET_NAME", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
+MAX_REPO_SIZE_MB = int(os.getenv("MAX_REPO_SIZE_MB", "100"))
+
 if not ANTHROPIC_API_KEY:
     logger.error("ANTHROPIC_API_KEY is not set")
     raise ValueError("ANTHROPIC_API_KEY is not set")

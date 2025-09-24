@@ -63,7 +63,7 @@ teardown_prompt: |
   2. Identify the main entry points and configuration files
   3. Analyze the core modules, classes, and functions
   4. Create the comprehensive markdown analysis
-  5. Write the analysis to a file named `repo_analysis.md` in the current directory
+  5. Write the analysis to a file named `analysis.md` in the current directory
 
   ## Output Requirements:
   - Write everything in clear, well-structured markdown

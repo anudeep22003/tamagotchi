@@ -18,9 +18,7 @@ from loguru import logger
 from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
-from core.sockets.file_streamer import stream_chunks_from_file
-from core.sockets.writer import WriterActor
-from core.teardown import RepoProcessor
+from core.teardown.git_repo_processor import RepoProcessor
 
 from . import sio
 
@@ -38,9 +36,7 @@ class ClaudeSDKActor:
     def __init__(self):
         self.actor_name = "claude"
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
-        self.repo_processor = RepoProcessor(
-            data_dir="data", temp_dir=os.getenv("TEMP_DIR")
-        )
+        self.repo_processor = RepoProcessor(data_dir="data")
         self.operation_timeout = int(
             os.getenv("OPERATION_TIMEOUT", "3600")
         )  # 1 hour default
@@ -96,17 +92,7 @@ class ClaudeSDKActor:
                 )
             )
         else:
-            user_query = self.prepare_messages(validated_envelope.data)
-            asyncio.create_task(
-                self.stream_claude_code_sdk_chunks(
-                    sid,
-                    user_query,
-                    validated_envelope.request_id,
-                    stream_id,
-                    actor=self.actor_name,
-                    model=self.model,
-                )
-            )
+            raise ValueError("Repo URL is required")
 
         return AckOk(
             ok=True,
@@ -193,17 +179,14 @@ class ClaudeSDKActor:
         user_query: str,
         request_id: str,
         stream_id: str,
+        cwd: Path,
         actor="claude",
-        # model: str = "claude-3-5-sonnet-20241022",
-        model: str = "claude-opus-4-1-20250805",
-        cwd: Optional[str] = None,
+        model: str = "claude-3-5-sonnet-20241022",
     ) -> None:
         async with ClaudeSDKClient(
             ClaudeCodeOptions(
                 model=model,
-                cwd=cwd
-                if cwd
-                else "/Users/anudeep/@anudeep/projects/tamagotchi/claude_playground/",
+                cwd=cwd,
                 allowed_tools=["Read", "Write", "Bash", "Grep"],
                 disallowed_tools=["WebSearch", "Bash(rm -r*)"],
                 permission_mode="acceptEdits",
@@ -230,69 +213,26 @@ class ClaudeSDKActor:
         stream_id: str,
     ) -> None:
         """Handle repository teardown process."""
-        temp_dir = None
+        repo_directory = None
         try:
-            # Step 1: Check cache and process repo URL
-            cached_file, temp_dir = self.repo_processor.process_repo_url(repo_url)
-
-            if cached_file:
-                # Cached version found, stream it directly
-                writer_actor = WriterActor()
-
-                # Create a wrapper that passes the file path
-                async def file_stream_wrapper(
-                    sid, messages, req_id, str_id, actor, model
-                ):
-                    await stream_chunks_from_file(
-                        sid, messages, req_id, str_id, actor, model, str(cached_file)
-                    )
-
-                writer_actor.stream_chunks = file_stream_wrapper
-                await writer_actor.stream_chunks(
-                    sid, [], request_id, stream_id, "writer", "gpt-4o"
-                )
+            result = self.repo_processor.process_repo_url(repo_url)
+            if result.temp_dir is None and result.cached_file_path is not None:
+                repo_directory = result.cached_file_path.absolute()
             else:
-                # Need to generate teardown
+                repo_directory = result.temp_dir.absolute()
 
-                # Extract repo info for final file naming
-                owner, repo_name = self.repo_processor.extract_repo_info(repo_url)
-                repo_hash = self.repo_processor.compute_repo_hash(owner, repo_name)
-
-                # Run Claude SDK teardown
-                teardown_prompt = self.load_teardown_prompt()
-                await self.stream_claude_code_sdk_chunks(
-                    sid,
-                    teardown_prompt,
-                    request_id,
-                    stream_id,
-                    actor="claude",
-                    model=self.model,
-                    cwd=temp_dir,
-                )
-
-                # After Claude SDK completes, save the teardown and stream it
-                try:
-                    saved_file = self.repo_processor.save_teardown(
-                        temp_dir, repo_name, repo_hash
-                    )
-                    # Stream the saved file to client
-                    writer_actor = WriterActor()
-
-                    async def file_stream_wrapper(
-                        sid, messages, req_id, str_id, actor, model
-                    ):
-                        await stream_chunks_from_file(
-                            sid, messages, req_id, str_id, actor, model, str(saved_file)
-                        )
-
-                    writer_actor.stream_chunks = file_stream_wrapper
-                    await writer_actor.stream_chunks(
-                        sid, [], request_id, f"{stream_id}-file", "writer", "gpt-4o"
-                    )
-
-                except Exception as save_error:
-                    logger.error(f"Failed to save teardown: {save_error}")
-                    # Continue without failing completely
+            # Run Claude SDK teardown
+            teardown_prompt = self.load_teardown_prompt()
+            await self.stream_claude_code_sdk_chunks(
+                sid,
+                teardown_prompt,
+                request_id,
+                stream_id,
+                cwd=repo_directory,
+                actor="claude",
+                model=self.model,
+            )
+            self.repo_processor.save_teardown(repo_directory, result.metadata)
 
         except Exception as e:
             logger.error(f"Error in repo teardown: {e}")
@@ -317,5 +257,6 @@ class ClaudeSDKActor:
             )
         finally:
             # Cleanup temp directory
-            if temp_dir:
-                self.repo_processor.cleanup_temp_dir(temp_dir)
+            if repo_directory:
+                self.repo_processor.cleanup_temp_dir(repo_directory)
+            pass
