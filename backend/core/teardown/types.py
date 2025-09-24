@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -100,3 +101,9 @@ class GitHubRepoMetadata(BaseModel):
 
 # Union type for successful metadata or error
 GitHubRepoResult = GitHubRepoMetadata | GitHubRepoError
+
+
+class ProcessRepoResult(BaseModel):
+    cached_file_path: Optional[Path] = None
+    temp_dir: Optional[Path] = None
+    metadata: GitHubRepoMetadata

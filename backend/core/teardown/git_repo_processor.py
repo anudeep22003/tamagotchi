@@ -18,6 +18,7 @@ from core.teardown.types import (
     GitHubRepoResult,
     LicenseInfo,
     ParentRepoInfo,
+    ProcessRepoResult,
 )
 
 logger = logger.bind(name=__name__)
@@ -243,6 +244,12 @@ class RepoProcessor:
 
         return False
 
+    def create_repo_folder(self, metadata: GitHubRepoMetadata) -> None:
+        """Create a folder for this repo."""
+        path = self.data_dir / metadata.full_name / self.compute_repo_hash(metadata)
+        path.mkdir(exist_ok=True, parents=True)
+        logger.info(f"Created repo folder: {path}")
+
     def find_cached_teardown(
         self, metadata: GitHubRepoMetadata, repo_hash: str
     ) -> Optional[Path]:
@@ -256,7 +263,7 @@ class RepoProcessor:
 
     def clone_repo(
         self, repo_url: str, branch: Optional[str] = None, shallow: bool = True
-    ) -> str:
+    ) -> Path:
         """Clone the repository to a temporary directory using GitPython."""
         temp_dir = tempfile.mkdtemp(prefix="repo-teardown-", dir=self.temp_dir)
         logger.info(f"Cloning {repo_url} to {temp_dir}")
@@ -280,7 +287,7 @@ class RepoProcessor:
             logger.info(f"Successfully cloned repository to {temp_dir}")
             logger.info(f"Current branch: {repo.active_branch.name}")
 
-            return temp_dir
+            return Path(temp_dir)
 
         except GitCommandError as e:
             logger.error(f"Failed to clone repository: {e}")
@@ -293,27 +300,28 @@ class RepoProcessor:
         """Save the generated teardown to storage."""
         # self.storage_client.upload_directory(temp_dir, f"{repo_name}/{repo_hash}")
         raise NotImplementedError("Not implemented")
-    
+
     def get_teardown_folder_path(self, metadata: GitHubRepoMetadata) -> Path:
         """Get the path to the teardown for this repo."""
         return self.data_dir / f"{metadata.full_name}/{metadata.latest_commit.sha}"
 
-    def save_teardown(self, temp_dir: str, metadata: GitHubRepoMetadata) -> Path:
+    def save_teardown(self, temp_dir: Path, metadata: GitHubRepoMetadata) -> Path:
         """Copy the generated teardown from temp dir to data dir."""
-        source_file = Path(temp_dir) / "repo_analysis.md"
+        source_file = Path(temp_dir) / "analysis.md"
 
         if not source_file.exists():
             raise FileNotFoundError(f"Teardown file not found at {source_file}")
 
         target_filename = "analysis.md"
-        target_file = self.get_teardown_folder_path(metadata) / target_filename
+        target_folder = self.get_teardown_folder_path(metadata)
+        target_file = target_folder / target_filename
 
         shutil.copy2(source_file, target_file)
         logger.info(f"Saved teardown to {target_file}")
 
         return target_file
 
-    def cleanup_temp_dir(self, temp_dir: str) -> None:
+    def cleanup_temp_dir(self, temp_dir: Path) -> None:
         """Clean up the temporary directory."""
         try:
             shutil.rmtree(temp_dir)
@@ -321,9 +329,12 @@ class RepoProcessor:
         except Exception as e:
             logger.warning(f"Failed to cleanup temp directory {temp_dir}: {e}")
 
-    def process_repo_url(
-        self, repo_url: str
-    ) -> tuple[Optional[Path], Optional[str], GitHubRepoMetadata]:
+    def create_dummy_analysis(self, temp_dir: Path) -> None:
+        """Create a dummy analysis file in the temp directory."""
+        with open(temp_dir / "analysis.md", "w") as f:
+            f.write("Analysis")
+
+    def process_repo_url(self, repo_url: str) -> ProcessRepoResult:
         """
         Process a repo URL: get metadata, check cache, clone if needed.
         Returns: (cached_file_path, temp_dir, metadata)
@@ -348,14 +359,27 @@ class RepoProcessor:
 
             # Check for cached version
             if self.check_if_repo_folder_exists(metadata):
-                return self.find_cached_teardown(metadata, repo_hash), None, metadata
+                return ProcessRepoResult(
+                    cached_file_path=self.find_cached_teardown(metadata, repo_hash),
+                    temp_dir=None,
+                    metadata=metadata,
+                )
+            else:
+                self.create_repo_folder(metadata)
 
             # No cache found, clone and analyze
             default_branch = metadata.default_branch or "main"
             temp_dir = self.clone_repo(repo_url, branch=default_branch, shallow=True)
+            self.create_dummy_analysis(temp_dir)
+            self.save_teardown(temp_dir, metadata)
+            self.cleanup_temp_dir(temp_dir)
 
             # self.save_teardown_to_storage(temp_dir, repo_name, repo_hash)
-            return None, temp_dir, metadata
+            return ProcessRepoResult(
+                cached_file_path=None,
+                temp_dir=temp_dir,
+                metadata=metadata,
+            )
 
         except Exception as e:
             logger.error(f"Error processing repo URL {repo_url}: {e}")
