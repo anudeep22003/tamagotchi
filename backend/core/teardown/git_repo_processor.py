@@ -31,7 +31,7 @@ class RepoProcessor:
         temp_dir: Optional[str] = None,
     ):
         self.data_dir = Path(data_dir)
-        self.temp_dir = temp_dir
+        self.temp_dir = Path(tempfile.mkdtemp(dir=temp_dir))
         self.storage_client = StorageClient()
         self.data_dir.mkdir(exist_ok=True)
 
@@ -81,7 +81,7 @@ class RepoProcessor:
 
             # Get recent activity (last 10 commits)
             recent_commits: list[CommitInfo] = []
-            for commit in repo.get_commits()[:10]:
+            for commit in repo.get_commits()[:10]:  # type: ignore
                 recent_commits.append(
                     CommitInfo(
                         sha=commit.sha,
@@ -265,7 +265,7 @@ class RepoProcessor:
         self, repo_url: str, branch: Optional[str] = None, shallow: bool = True
     ) -> Path:
         """Clone the repository to a temporary directory using GitPython."""
-        temp_dir = tempfile.mkdtemp(prefix="repo-teardown-", dir=self.temp_dir)
+        temp_dir = self.temp_dir
         logger.info(f"Cloning {repo_url} to {temp_dir}")
 
         clone_kwargs: dict[str, Any] = {}
@@ -370,9 +370,6 @@ class RepoProcessor:
             # No cache found, clone and analyze
             default_branch = metadata.default_branch or "main"
             temp_dir = self.clone_repo(repo_url, branch=default_branch, shallow=True)
-            self.create_dummy_analysis(temp_dir)
-            self.save_teardown(temp_dir, metadata)
-            self.cleanup_temp_dir(temp_dir)
 
             # self.save_teardown_to_storage(temp_dir, repo_name, repo_hash)
             return ProcessRepoResult(

@@ -20,7 +20,7 @@ class LicenseInfo(BaseModel):
 
     name: str
     spdx_id: str
-    url: str
+    url: Optional[str] = None
 
 
 class ParentRepoInfo(BaseModel):
