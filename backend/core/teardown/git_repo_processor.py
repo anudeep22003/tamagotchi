@@ -2,7 +2,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from git import GitCommandError, Repo
 from github import GithubException
@@ -234,18 +234,22 @@ class RepoProcessor:
         """
         return metadata.latest_commit.sha
 
-    def find_cached_teardown(self, repo_name: str, repo_hash: str) -> Optional[Path]:
-        """Check if a cached teardown exists for this repo."""
-        expected_filename = f"{repo_name}-{repo_hash}.md"
-        cached_file = self.data_dir / expected_filename
+    def check_if_repo_folder_exists(self, metadata: GitHubRepoMetadata) -> bool:
+        """Check if a repo entry exists for this repo."""
 
-        if cached_file.exists():
-            logger.info(f"Found cached teardown: {cached_file}")
-            return cached_file
+        for file_path in self.data_dir.glob(f"{metadata.full_name}*"):
+            logger.info(f"Found cached teardown: {file_path}")
+            return True
 
-        # Also check for any files with the same hash
-        for file_path in self.data_dir.glob(f"*-{repo_hash}.md"):
-            logger.info(f"Found cached teardown with same hash: {file_path}")
+        return False
+
+    def find_cached_teardown(
+        self, metadata: GitHubRepoMetadata, repo_hash: str
+    ) -> Optional[Path]:
+        """Find a cached teardown for this repo."""
+        analysis_folder_path = self.data_dir / metadata.full_name / repo_hash
+        for file_path in analysis_folder_path.glob("analysis.md"):
+            logger.info(f"Found cached teardown: {file_path}")
             return file_path
 
         return None
@@ -287,17 +291,22 @@ class RepoProcessor:
         self, temp_dir: str, repo_name: str, repo_hash: str
     ) -> None:
         """Save the generated teardown to storage."""
-        self.storage_client.upload_directory(temp_dir, f"{repo_name}/{repo_hash}")
+        # self.storage_client.upload_directory(temp_dir, f"{repo_name}/{repo_hash}")
+        raise NotImplementedError("Not implemented")
+    
+    def get_teardown_folder_path(self, metadata: GitHubRepoMetadata) -> Path:
+        """Get the path to the teardown for this repo."""
+        return self.data_dir / f"{metadata.full_name}/{metadata.latest_commit.sha}"
 
-    def save_teardown(self, temp_dir: str, repo_name: str, repo_hash: str) -> Path:
+    def save_teardown(self, temp_dir: str, metadata: GitHubRepoMetadata) -> Path:
         """Copy the generated teardown from temp dir to data dir."""
         source_file = Path(temp_dir) / "repo_analysis.md"
 
         if not source_file.exists():
             raise FileNotFoundError(f"Teardown file not found at {source_file}")
 
-        target_filename = f"{repo_name}-{repo_hash}.md"
-        target_file = self.data_dir / target_filename
+        target_filename = "analysis.md"
+        target_file = self.get_teardown_folder_path(metadata) / target_filename
 
         shutil.copy2(source_file, target_file)
         logger.info(f"Saved teardown to {target_file}")
@@ -314,7 +323,7 @@ class RepoProcessor:
 
     def process_repo_url(
         self, repo_url: str
-    ) -> tuple[Optional[Path], Optional[str], Dict[str, Any]]:
+    ) -> tuple[Optional[Path], Optional[str], GitHubRepoMetadata]:
         """
         Process a repo URL: get metadata, check cache, clone if needed.
         Returns: (cached_file_path, temp_dir, metadata)
@@ -334,23 +343,18 @@ class RepoProcessor:
             if not should_clone:
                 raise RuntimeError(reason)
 
+            # Use latest commit SHA for accurate caching
             repo_hash = self.compute_repo_hash(metadata)
 
-            # Use latest commit SHA for accurate caching
-            latest_commit_sha = metadata.get("latest_commit", {}).get("sha")
-            repo_hash = self.compute_repo_hash(owner, repo_name, latest_commit_sha)
-
             # Check for cached version
-            cached_file = self.find_cached_teardown(repo_name, repo_hash)
-            if cached_file:
-                logger.info(f"Using cached analysis for {owner}/{repo_name}")
-                return cached_file, None, metadata
+            if self.check_if_repo_folder_exists(metadata):
+                return self.find_cached_teardown(metadata, repo_hash), None, metadata
 
             # No cache found, clone and analyze
-            default_branch = metadata.get("default_branch", "main")
+            default_branch = metadata.default_branch or "main"
             temp_dir = self.clone_repo(repo_url, branch=default_branch, shallow=True)
 
-            self.save_teardown_to_storage(temp_dir, repo_name, repo_hash)
+            # self.save_teardown_to_storage(temp_dir, repo_name, repo_hash)
             return None, temp_dir, metadata
 
         except Exception as e:
