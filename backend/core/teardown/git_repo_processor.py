@@ -333,7 +333,7 @@ class RepoProcessor:
         """Create a dummy analysis file in the temp directory."""
         with open(temp_dir / "analysis.md", "w") as f:
             f.write("Analysis")
-
+    
     def process_repo_url(self, repo_url: str) -> ProcessRepoResult:
         """
         Process a repo URL: get metadata, check cache, clone if needed.

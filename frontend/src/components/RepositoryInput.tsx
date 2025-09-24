@@ -91,7 +91,7 @@ export const RepositoryInput = () => {
     return () => clearTimeout(timeoutId);
   }, [inputText]);
 
-  const validationStatus = getValidationStatus(
+const validationStatus = getValidationStatus(
     validationState,
     isCheckingRepo
   );

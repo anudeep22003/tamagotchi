@@ -210,6 +210,71 @@ class ClaudeSDKActor:
                 except Exception as e:
                     logger.error(f"Error in chunk processor: {e}")
 
+    async def stream_cached_analysis(
+        self, sid: str, request_id: str, stream_id: str, analysis_file_path: Path
+    ) -> None:
+        """Stream the cached analysis file in the temp directory."""
+        logger.info(f"Streaming cached analysis file: {analysis_file_path}")
+        stream_id = str(uuid.uuid4())
+        # send a stream start
+        envelope_to_send = Envelope(
+            request_id=request_id,
+            stream_id=stream_id,
+            direction="s2c",
+            actor="writer",
+            action="stream",
+            modifier="start",
+            data={
+                "delta": "start",
+            },
+        )
+        await sio.emit(
+            "s2c.writer.stream.start",
+            envelope_to_send.model_dump_json(),
+            to=sid,
+            callback=lambda x: logger.info(f"Stream start sent, received ack: {x}"),
+        )
+        # seq = 0
+        # with open(analysis_file_path, "r") as f:
+        #     content = f.read()
+        # stream = content.split("\n")
+        # for chunk in stream:
+        #     envelope_to_send = Envelope(
+        #         request_id=request_id,
+        #         stream_id=stream_id,
+        #         seq=seq,
+        #         direction="s2c",
+        #         actor="writer",
+        #         action="stream",
+        #         modifier="chunk",
+        #         data={
+        #             "delta": chunk,
+        #         },
+        #     )
+        #     await sio.emit(
+        #         "s2c.writer.stream.chunk",
+        #         envelope_to_send.model_dump_json(),
+        #         to=sid,
+        #     )
+        #     seq += 1
+        # envelope_to_send = Envelope(
+        #     request_id=request_id,
+        #     stream_id=stream_id,
+        #     seq=1,
+        #     direction="s2c",
+        #     actor="writer",
+        #     action="stream",
+        #     modifier="end",
+        #     data={
+        #         "finish_reason": "stop",
+        #     },
+        # )
+        # await sio.emit(
+        #     "s2c.writer.stream.end",
+        #     envelope_to_send.model_dump_json(),
+        #     to=sid,
+        # )
+
     async def handle_repo_teardown(
         self,
         sid: str,
@@ -218,11 +283,13 @@ class ClaudeSDKActor:
         stream_id: str,
     ) -> None:
         """Handle repository teardown process."""
-        repo_directory = None
         try:
             result = self.repo_processor.process_repo_url(repo_url)
-            if result.temp_dir is None and result.cached_file_path is not None:
-                repo_directory = result.cached_file_path.absolute()
+            if result.cached_file_path:
+                await self.stream_cached_analysis(
+                    sid, request_id, stream_id, result.cached_file_path
+                )
+                return
             else:
                 repo_directory = result.temp_dir.absolute()
 

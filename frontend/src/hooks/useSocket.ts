@@ -114,6 +114,39 @@ export const useSocket = () => {
       onStreamEnd("claude");
     });
 
+    // when server starts
+    socket.on(
+      "s2c.writer.stream.start",
+      (rawMessage: string, callback: (response: any) => void) => {
+        try {
+          const envelope_received: Envelope<{
+            delta: "start";
+          }> = JSON.parse(rawMessage);
+          console.log(
+            "server initiated a stream start, true bidirectional yayy"
+          );
+          console.log("s2c.writer.stream.start", envelope_received);
+
+          // ✅ Send acknowledgement using the callback
+          callback({
+            ok: true,
+            streamId: envelope_received.streamId,
+            requestId: envelope_received.requestId,
+          });
+        } catch (error) {
+          console.error(
+            "Error parsing stream start:",
+            error,
+            rawMessage
+          );
+          callback({
+            ok: false,
+            error: "Failed to parse stream start",
+          });
+        }
+      }
+    );
+
     socketRef.current = socket;
 
     return () => {
