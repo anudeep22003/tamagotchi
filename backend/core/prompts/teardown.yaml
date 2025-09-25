@@ -21,10 +21,13 @@ teardown_prompt: |
   - Include relevant code snippets for important functions
 
   ### 4. Key Classes
-  - Identify the main classes that are central to the repository
+  - Identify the main classes that are central to the repository. 
   - Explain their responsibilities and relationships
   - Show inheritance hierarchies and composition patterns
   - Include relevant code snippets for important classes
+
+    To identify the most important classes study the imports. The classes that are referenced the most in the imports and otherwise are the most important.
+    This is because they are likely the building blocks that other more complex classes are built on top of.
 
   ### 5. Module Architecture
   - Identify the main modules and their purposes
@@ -75,3 +78,12 @@ teardown_prompt: |
 
   ## Repository to Analyze:
   The repository has been cloned to the current working directory. Begin your analysis now.
+
+teardown_prompt_test: |
+    This is a test analysis. Your job is to create an `analysis.md` file in the current directory.
+    Write a brief overview of what you know about the repository into the `analysis.md` file.
+    No looking at the code. Just write about what you know about the repository. 
+    If you dont know anything, then look at the README.md file. 
+    Do not look at any file beyond the README.md file.
+    Only look at the README.md if you dont know anything about the repository.
+    It should be done in a single shot.

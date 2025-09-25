@@ -33,13 +33,14 @@ class ClaudeSDKRequest(AliasedBaseModel):
 
 
 class ClaudeSDKActor:
-    def __init__(self):
+    def __init__(self, test: bool = False):
         self.actor_name = "claude"
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
         self.repo_processor = RepoProcessor(data_dir="data")
         self.operation_timeout = int(
             os.getenv("OPERATION_TIMEOUT", "3600")
         )  # 1 hour default
+        self.test = test
 
     def load_teardown_prompt(self) -> str:
         """Load teardown prompt from YAML configuration."""
@@ -47,6 +48,8 @@ class ClaudeSDKActor:
         try:
             with open(prompt_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
+                if self.test:
+                    return config["teardown_prompt_test"]
                 return config["teardown_prompt"]
         except Exception as e:
             logger.error(f"Failed to load teardown prompt: {e}")
@@ -204,6 +207,7 @@ class ClaudeSDKActor:
 
             seq = 0
             async for chunk in stream:
+                # TODO: AssistantMessage chunk needs processing
                 logger.info(f"Chunk: {chunk}")
                 try:
                     await self.chunk_processor(chunk, request_id, stream_id, sid, seq)
@@ -231,11 +235,11 @@ class ClaudeSDKActor:
             to=sid,
         )
 
-    async def stream_cached_analysis(
+    async def stream_analysis(
         self, sid: str, request_id: str, stream_id: str, analysis_file_path: Path
     ) -> None:
-        """Stream the cached analysis file in the temp directory."""
-        logger.info(f"Streaming cached analysis file: {analysis_file_path}")
+        """Stream the analysis file."""
+        logger.info(f"Streaming analysis file: {analysis_file_path}")
         stream_id = str(uuid.uuid4())
         # send a stream start
         envelope_to_send = Envelope(
@@ -309,7 +313,7 @@ class ClaudeSDKActor:
             result = self.repo_processor.process_repo_url(repo_url)
             if result.cached_file_path:
                 await self.close_claude_stream(sid, request_id, stream_id)
-                await self.stream_cached_analysis(
+                await self.stream_analysis(
                     sid, request_id, stream_id, result.cached_file_path
                 )
                 return
@@ -327,7 +331,11 @@ class ClaudeSDKActor:
                 actor="claude",
                 model=self.model,
             )
-            self.repo_processor.save_teardown(repo_directory, result.metadata)
+            await self.close_claude_stream(sid, request_id, stream_id)
+            analysis_file_path = self.repo_processor.save_teardown_analysis(
+                repo_directory, result.metadata
+            )
+            await self.stream_analysis(sid, request_id, stream_id, analysis_file_path)
 
         except Exception as e:
             logger.error(f"Error in repo teardown: {e}")

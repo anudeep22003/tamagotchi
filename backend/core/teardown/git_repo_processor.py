@@ -305,7 +305,9 @@ class RepoProcessor:
         """Get the path to the teardown for this repo."""
         return self.data_dir / f"{metadata.full_name}/{metadata.latest_commit.sha}"
 
-    def save_teardown(self, temp_dir: Path, metadata: GitHubRepoMetadata) -> Path:
+    def save_teardown_analysis(
+        self, temp_dir: Path, metadata: GitHubRepoMetadata
+    ) -> Path:
         """Copy the generated teardown from temp dir to data dir."""
         source_file = Path(temp_dir) / "analysis.md"
 
@@ -333,7 +335,7 @@ class RepoProcessor:
         """Create a dummy analysis file in the temp directory."""
         with open(temp_dir / "analysis.md", "w") as f:
             f.write("Analysis")
-    
+
     def process_repo_url(self, repo_url: str) -> ProcessRepoResult:
         """
         Process a repo URL: get metadata, check cache, clone if needed.
