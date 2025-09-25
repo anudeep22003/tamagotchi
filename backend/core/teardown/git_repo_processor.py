@@ -237,15 +237,6 @@ class RepoProcessor:
         """
         return metadata.latest_commit.sha
 
-    def check_if_repo_folder_exists(self, metadata: GitHubRepoMetadata) -> bool:
-        """Check if a repo entry exists for this repo."""
-
-        for file_path in self.data_dir.glob(f"{metadata.full_name}*"):
-            logger.info(f"Found cached teardown: {file_path}")
-            return True
-
-        return False
-
     def create_repo_folder(self, metadata: GitHubRepoMetadata) -> None:
         """Create a folder for this repo."""
         path = self.data_dir / metadata.full_name / self.compute_repo_hash(metadata)
