@@ -9,8 +9,8 @@ from github import GithubException
 from loguru import logger
 
 from core.clients.github_client import get_github_client
-from core.clients.storage import StorageClient
 from core.config import MAX_REPO_SIZE_MB
+from core.storage.google import StorageBucketClient
 from core.teardown.types import (
     CommitInfo,
     GitHubRepoError,
@@ -34,7 +34,7 @@ class RepoProcessor:
     ):
         self.data_dir = Path(data_dir)
         self.temp_dir = Path(tempfile.mkdtemp(dir=temp_dir))
-        self.storage_client = StorageClient()
+        self.storage_client = StorageBucketClient()
         self.data_dir.mkdir(exist_ok=True)
 
         self.github = get_github_client()
