@@ -19,6 +19,7 @@ from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from core.teardown.git_repo_processor import RepoProcessor
+from core.teardown.storage_adaptor import LocalStorageClient, StorageAdaptorInterface
 from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
 
 from . import sio
@@ -33,11 +34,20 @@ class ClaudeSDKRequest(AliasedBaseModel):
     )
 
 
+DATA_DIR = Path("data")
+
+
 class ClaudeSDKActor:
-    def __init__(self, test: bool = False):
+    def __init__(
+        self,
+        storage_client: Optional[StorageAdaptorInterface] = None,
+        data_dir: Path = DATA_DIR,
+        test: bool = False,
+    ):
+        self.storage_client = storage_client or LocalStorageClient(data_dir=data_dir)
         self.actor_name = "claude"
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
-        self.repo_processor = RepoProcessor(data_dir="data")
+        self.repo_processor = RepoProcessor(storage_client=self.storage_client)
         self.operation_timeout = int(
             os.getenv("OPERATION_TIMEOUT", "3600")
         )  # 1 hour default
