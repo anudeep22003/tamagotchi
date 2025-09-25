@@ -237,9 +237,9 @@ class RepoProcessor:
         """
         return metadata.latest_commit.sha
 
-    def create_repo_folder(self, metadata: GitHubRepoMetadata) -> None:
+    def create_repo_folder(self, metadata: GitHubRepoMetadata, repo_hash: str) -> None:
         """Create a folder for this repo."""
-        path = self.data_dir / metadata.full_name / self.compute_repo_hash(metadata)
+        path = self.data_dir / metadata.full_name / repo_hash
         path.mkdir(exist_ok=True, parents=True)
         logger.info(f"Created repo folder: {path}")
 
@@ -360,7 +360,7 @@ class RepoProcessor:
                     metadata=metadata,
                 )
             else:
-                self.create_repo_folder(metadata)
+                self.create_repo_folder(metadata, repo_hash)
 
             # No cache found, clone and analyze
             default_branch = metadata.default_branch or "main"
