@@ -19,6 +19,7 @@ from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from core.teardown.git_repo_processor import RepoProcessor
+from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
 
 from . import sio
 
@@ -262,7 +263,12 @@ class ClaudeSDKActor:
         seq = 0
         with open(analysis_file_path, "r") as f:
             content = f.read()
-        for chunk in content:
+
+        def window_stream(content: str, window_size: int = 100):
+            for i in range(0, len(content), window_size):
+                yield content[i : i + window_size]
+
+        for chunk in window_stream(content):
             envelope_to_send = Envelope(
                 request_id=request_id,
                 stream_id=stream_id,
@@ -281,7 +287,7 @@ class ClaudeSDKActor:
                 to=sid,
             )
             seq += 1
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.01)
         envelope_to_send = Envelope(
             request_id=request_id,
             stream_id=stream_id,
@@ -311,14 +317,17 @@ class ClaudeSDKActor:
         repo_directory = None
         try:
             result = self.repo_processor.process_repo_url(repo_url)
-            if result.cached_file_path:
+            if isinstance(result, ProcessRepoResultCache):
                 await self.close_claude_stream(sid, request_id, stream_id)
+                analysis_file_path = result.cached_file_path
                 await self.stream_analysis(
-                    sid, request_id, stream_id, result.cached_file_path
+                    sid, request_id, stream_id, analysis_file_path
                 )
                 return
-            else:
+            elif isinstance(result, ProcessRepoResultNoCache):
                 repo_directory = result.temp_dir.absolute()
+            else:
+                raise ValueError("Invalid result type")
 
             # Run Claude SDK teardown
             teardown_prompt = self.load_teardown_prompt()

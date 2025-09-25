@@ -107,7 +107,9 @@ const AddRepoContent = () => {
         {status === "idle" ? (
           <SampleRepos handleRepositoryClick={handleRepositoryClick} />
         ) : (
-          <GenerativeArea />
+          <div className="w-1/2 flex flex-col">
+            <GenerativeArea />
+          </div>
         )}
       </div>
     </div>

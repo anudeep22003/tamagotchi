@@ -265,7 +265,7 @@ export const MarkdownRenderer = ({
 
       if (isCodeBlock && language) {
         return (
-          <div className="relative group my-3">
+          <div className="relative group my-3 overflow-hidden">
             <SyntaxHighlighter
               style={vscDarkPlus}
               language={language}
@@ -276,7 +276,10 @@ export const MarkdownRenderer = ({
                 fontSize: "0.875rem",
                 padding: "1rem",
                 backgroundColor: "#1e1e1e",
+                overflowX: "auto",
+                maxWidth: "100%",
               }}
+              wrapLongLines={false}
             >
               {codeString}
             </SyntaxHighlighter>

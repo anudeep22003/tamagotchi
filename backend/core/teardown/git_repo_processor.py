@@ -19,6 +19,8 @@ from core.teardown.types import (
     LicenseInfo,
     ParentRepoInfo,
     ProcessRepoResult,
+    ProcessRepoResultCache,
+    ProcessRepoResultNoCache,
 )
 
 logger = logger.bind(name=__name__)
@@ -362,9 +364,8 @@ class RepoProcessor:
             # Check for cached version
             cached_file_path = self.find_cached_teardown(metadata, repo_hash)
             if cached_file_path:
-                return ProcessRepoResult(
+                return ProcessRepoResultCache(
                     cached_file_path=cached_file_path,
-                    temp_dir=None,
                     metadata=metadata,
                 )
             else:
@@ -375,8 +376,7 @@ class RepoProcessor:
             temp_dir = self.clone_repo(repo_url, branch=default_branch, shallow=True)
 
             # self.save_teardown_to_storage(temp_dir, repo_name, repo_hash)
-            return ProcessRepoResult(
-                cached_file_path=None,
+            return ProcessRepoResultNoCache(
                 temp_dir=temp_dir,
                 metadata=metadata,
             )

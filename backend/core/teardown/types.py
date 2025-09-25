@@ -103,7 +103,14 @@ class GitHubRepoMetadata(BaseModel):
 GitHubRepoResult = GitHubRepoMetadata | GitHubRepoError
 
 
-class ProcessRepoResult(BaseModel):
-    cached_file_path: Optional[Path] = None
-    temp_dir: Optional[Path] = None
+class ProcessRepoResultCache(BaseModel):
+    cached_file_path: Path
     metadata: GitHubRepoMetadata
+
+
+class ProcessRepoResultNoCache(BaseModel):
+    temp_dir: Path
+    metadata: GitHubRepoMetadata
+
+
+ProcessRepoResult = ProcessRepoResultCache | ProcessRepoResultNoCache

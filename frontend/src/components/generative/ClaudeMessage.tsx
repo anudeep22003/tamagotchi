@@ -28,7 +28,7 @@ export const ClaudeMessage = memo(
     );
 
     return (
-      <div className="bg-black rounded-lg border border-gray-700 overflow-hidden shadow-lg">
+      <div className="bg-black rounded-lg border border-gray-900 overflow-hidden shadow-lg">
         {/* Terminal Header */}
         <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
           <div className="flex gap-2">
@@ -42,7 +42,7 @@ export const ClaudeMessage = memo(
         </div>
 
         {/* Terminal Content */}
-        <div className="p-4 font-mono text-sm text-green-400 bg-black">
+        <div className="p-4 font-mono text-sm text-green-400 bg-black overflow-hidden">
           <MarkdownRenderer content={formattedContent} />
         </div>
       </div>
