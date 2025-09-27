@@ -42,10 +42,9 @@ class ClaudeSDKActor:
     def __init__(
         self,
         storage_client: Optional[StorageAdaptorInterface] = None,
-        data_dir: Path = DATA_DIR,
         test: bool = False,
     ):
-        self.storage_client = storage_client or LocalStorageClient(data_dir=data_dir)
+        self.storage_client = storage_client or LocalStorageClient(data_dir=DATA_DIR)
         self.actor_name = "claude"
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
         self.repo_processor = RepoProcessor(storage_client=self.storage_client)
@@ -248,10 +247,14 @@ class ClaudeSDKActor:
         )
 
     async def stream_analysis(
-        self, sid: str, request_id: str, stream_id: str, analysis_file_path: Path
+        self,
+        sid: str,
+        request_id: str,
+        stream_id: str,
+        analysis_file_path_absolute: Path,
     ) -> None:
         """Stream the analysis file."""
-        logger.info(f"Streaming analysis file: {analysis_file_path}")
+        logger.info(f"Streaming analysis file: {analysis_file_path_absolute}")
         stream_id = str(uuid.uuid4())
         # send a stream start
         envelope_to_send = Envelope(
@@ -272,7 +275,9 @@ class ClaudeSDKActor:
             callback=lambda x: logger.info(f"Stream start sent, received ack: {x}"),
         )
         seq = 0
-        with open(analysis_file_path, "r") as f:
+        with self.storage_client.open_teardown_analysis(
+            analysis_file_path_absolute
+        ) as f:
             content = f.read()
 
         def window_stream(content: str, window_size: int = 100):
@@ -352,10 +357,13 @@ class ClaudeSDKActor:
                 model=self.model,
             )
             await self.close_claude_stream(sid, request_id, stream_id)
-            analysis_file_path = self.storage_client.save_teardown_analysis(
+            analysis_file_path_absolute = self.storage_client.save_teardown_analysis(
                 repo_directory, result.metadata
             )
-            await self.stream_analysis(sid, request_id, stream_id, analysis_file_path)
+            if analysis_file_path_absolute:
+                await self.stream_analysis(
+                    sid, request_id, stream_id, analysis_file_path_absolute
+                )
 
         except Exception as e:
             logger.error(f"Error in repo teardown: {e}")

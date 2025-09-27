@@ -10,5 +10,5 @@ logger = logger.bind(name=__name__)
 
 @sio.on("c2s.claude.stream.start")
 async def request_claude_stream(sid: str, envelope: dict) -> str:
-    claude_sdk_actor = ClaudeSDKActor(storage_client=GoogleStorageAdaptor())
+    claude_sdk_actor = ClaudeSDKActor(storage_client=GoogleStorageAdaptor(), test=True)
     return claude_sdk_actor.handle_stream_start(sid, envelope)

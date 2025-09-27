@@ -18,6 +18,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 BUCKET_NAME = os.getenv("BUCKET_NAME", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+TEMP_DIR = os.getenv("TEMP_DIR", "/tmp")
 
 MAX_REPO_SIZE_MB = int(os.getenv("MAX_REPO_SIZE_MB", "100"))
 

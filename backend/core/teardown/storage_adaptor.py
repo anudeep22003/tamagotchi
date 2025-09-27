@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional, TextIO
 
 from loguru import logger
 
@@ -28,7 +29,12 @@ class StorageAdaptorInterface(ABC):
     @abstractmethod
     def save_teardown_analysis(
         self, temp_dir: Path, metadata: GitHubRepoMetadata
-    ) -> Path:
+    ) -> Optional[Path]:
+        raise NotImplementedError
+
+    @abstractmethod
+    @contextmanager
+    def open_teardown_analysis(self, analysis_file_path: Path) -> Iterator[TextIO]:
         raise NotImplementedError
 
 
@@ -65,16 +71,30 @@ class GoogleStorageAdaptor(StorageAdaptorInterface):
 
     def save_teardown_analysis(
         self, temp_dir: Path, metadata: GitHubRepoMetadata
-    ) -> Path:
+    ) -> Optional[Path]:
         source_file = Path(temp_dir) / "analysis.md"
         if not source_file.exists():
             raise FileNotFoundError(f"Teardown file not found at {source_file}")
 
         save_location = f"{self.data_dir}/{metadata.full_name}/{metadata.latest_commit.sha}/analysis.md"
         logger.info(f"Saving teardown analysis to: {save_location}")
-        self.storage_client.upload_file(
-            source_file,
-            save_location,
-        )
-        logger.info(f"Saved teardown analysis to: {save_location}")
-        return Path(save_location)
+        try:
+            self.storage_client.upload_file(
+                source_file,
+                save_location,
+            )
+            logger.info(f"Saved teardown analysis to: {save_location}")
+            return Path(save_location).absolute()
+        except Exception as e:
+            logger.error(f"Failed to save teardown analysis: {e}")
+            return None
+
+    @contextmanager
+    def open_teardown_analysis(self, analysis_file_path_absolute: Path) -> Iterator[TextIO]:
+        blob_path = analysis_file_path_absolute.as_posix()
+        content = self.storage_client.read_text(blob_path)
+
+        # create a temporary file like object
+        from io import StringIO
+
+        yield StringIO(content)

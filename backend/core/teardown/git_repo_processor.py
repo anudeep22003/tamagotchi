@@ -8,6 +8,7 @@ from git import GitCommandError, Repo
 from github import GithubException
 from loguru import logger
 
+from core import config
 from core.clients.github_client import get_github_client
 from core.config import MAX_REPO_SIZE_MB
 from core.teardown.storage_adaptor import StorageAdaptorInterface
@@ -25,14 +26,16 @@ from core.teardown.types import (
 
 logger = logger.bind(name=__name__)
 
+TEMP_DIR = config.TEMP_DIR
+
 
 class RepoProcessor:
     def __init__(
         self,
         storage_client: StorageAdaptorInterface,
-        temp_dir: Optional[str] = None,
     ):
-        self.temp_dir = Path(tempfile.mkdtemp(dir=temp_dir))
+        self.temp_dir = Path(tempfile.mkdtemp(dir=TEMP_DIR))
+        logger.info(f"Created temp directory: {self.temp_dir}")
         self.storage_client = storage_client
         self.github = get_github_client()
 
