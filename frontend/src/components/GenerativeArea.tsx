@@ -52,13 +52,15 @@ export const GenerativeArea = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <GenerativeHeader />
-      <Tabs
-        value={currentTab}
-        onValueChange={handleTabChange}
-        className="flex-1 flex flex-col overflow-y-auto"
-      >
-        <div className="px-4 pt-2">
+      {/* <GenerativeHeader /> */}
+
+      {/* Sticky TabsList */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 pt-2 pb-2">
+        <Tabs
+          value={currentTab}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
           <TabsList className="w-fit">
             {availableTabs.map((actor) => (
               <TabsTrigger key={actor} value={actor}>
@@ -69,17 +71,27 @@ export const GenerativeArea = () => {
               </TabsTrigger>
             ))}
           </TabsList>
-        </div>
-        {availableTabs.map((actor) => (
-          <TabsContent
-            key={actor}
-            value={actor}
-            className="flex-1 mt-0"
-          >
-            <ActorContent type={actor} allMessages={allMessages} />
-          </TabsContent>
-        ))}
-      </Tabs>
+        </Tabs>
+      </div>
+
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <Tabs
+          value={currentTab}
+          onValueChange={handleTabChange}
+          className="h-full"
+        >
+          {availableTabs.map((actor) => (
+            <TabsContent
+              key={actor}
+              value={actor}
+              className="h-full mt-0"
+            >
+              <ActorContent type={actor} allMessages={allMessages} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
 
       <div className="p-4 border-t border-border">
         <TabControls />
