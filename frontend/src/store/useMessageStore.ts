@@ -68,9 +68,15 @@ export const useMessageStore = create<MessageState>()(
             newStreamingActors.add(actor);
           }
 
+          // Auto-switch to streaming actor if user hasn't manually selected a tab
+          const shouldAutoSwitch =
+            !state.isTabManuallySelected && type !== "human";
+
           return {
             allMessages: [...state.allMessages, newMessage],
             streamingActors: newStreamingActors,
+            // Only update activeTab if we should auto-switch
+            ...(shouldAutoSwitch && { activeTab: actor }),
           };
         });
       },
