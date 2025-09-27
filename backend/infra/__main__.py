@@ -19,6 +19,7 @@ from pulumi_gcp.cloudrun import (
 load_dotenv(override=True, dotenv_path=".env.prod")
 
 anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "not even initialized")
+github_token = os.getenv("GITHUB_TOKEN", "not even initialized")
 # Read from Pulumi config instead of environment
 image_tag = pulumi.Config().get("image_tag") or "latest"
 
@@ -52,12 +53,26 @@ anthropic_secret_version = gcp.secretmanager.SecretVersion(
     opts=pulumi.ResourceOptions(depends_on=anthropic_secret),
 )
 
+github_secret = gcp.secretmanager.Secret(
+    "github-token",
+    secret_id="github-token",
+    replication={"user_managed": {"replicas": [{"location": "us-central1"}]}},
+)
+
+github_secret_version = gcp.secretmanager.SecretVersion(
+    "github-token-version",
+    secret=github_secret.id,
+    secret_data=github_token,
+    opts=pulumi.ResourceOptions(depends_on=github_secret),
+)
+
 
 def create_pod(
     name: str,
     vpc_connector: pulumi.Output[gcp.vpcaccess.Connector],  # Change this type
     artifact_registry_url: pulumi.Output[str],
     anthropic_secret: gcp.secretmanager.Secret,
+    github_secret: gcp.secretmanager.Secret,
     enabled_apis: pulumi.Output[list[gcp.projects.Service]],
     image_tag: str,
 ) -> dict:
@@ -93,6 +108,14 @@ def create_pod(
     gcp.secretmanager.SecretIamMember(
         f"{name}-anthropic-secret-access",
         secret_id=anthropic_secret.secret_id,
+        role="roles/secretmanager.secretAccessor",
+        member=pulumi.Output.concat("serviceAccount:", service_account.email),
+        opts=pulumi.ResourceOptions(depends_on=service_account),
+    )
+
+    gcp.secretmanager.SecretIamMember(
+        f"{name}-github-secret-access",
+        secret_id=github_secret.secret_id,
         role="roles/secretmanager.secretAccessor",
         member=pulumi.Output.concat("serviceAccount:", service_account.email),
         opts=pulumi.ResourceOptions(depends_on=service_account),
@@ -144,6 +167,15 @@ def create_pod(
                             ),
                             # Secrets will be mounted as env vars in production
                             ServiceTemplateSpecContainerEnvArgs(
+                                name="GITHUB_TOKEN",
+                                value_from=ServiceTemplateSpecContainerEnvValueFromArgs(
+                                    secret_key_ref=ServiceTemplateSpecContainerEnvValueFromSecretKeyRefArgs(
+                                        name=github_secret.secret_id,
+                                        key="latest",
+                                    )
+                                ),
+                            ),
+                            ServiceTemplateSpecContainerEnvArgs(
                                 name="ANTHROPIC_API_KEY",
                                 value_from=ServiceTemplateSpecContainerEnvValueFromArgs(
                                     secret_key_ref=ServiceTemplateSpecContainerEnvValueFromSecretKeyRefArgs(
@@ -185,6 +217,7 @@ output = create_pod(
     vpc_connector=vpc_connector,
     artifact_registry_url=artifact_registry_url,
     anthropic_secret=anthropic_secret,
+    github_secret=github_secret,
     enabled_apis=enabled_apis,
     image_tag=image_tag,
 )
