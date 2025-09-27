@@ -20,7 +20,7 @@ from pydantic import Field, ValidationError
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from core.teardown.git_repo_processor import RepoProcessor
 from core.teardown.local_storage_client import LocalStorageClient
-from core.teardown.storage_adaptor import StorageAdaptorInterface
+from core.teardown.abstract_storage_adaptor import StorageAdaptorInterface
 from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
 
 from . import sio

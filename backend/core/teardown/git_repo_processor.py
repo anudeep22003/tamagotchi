@@ -11,7 +11,6 @@ from loguru import logger
 from core import config
 from core.clients.github_client import get_github_client
 from core.config import MAX_REPO_SIZE_MB
-from core.teardown.storage_adaptor import StorageAdaptorInterface
 from core.teardown.types import (
     CommitInfo,
     GitHubRepoError,
@@ -23,6 +22,8 @@ from core.teardown.types import (
     ProcessRepoResultCache,
     ProcessRepoResultNoCache,
 )
+
+from .abstract_storage_adaptor import StorageAdaptorInterface
 
 logger = logger.bind(name=__name__)
 

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, Optional, TextIO
@@ -6,36 +5,11 @@ from typing import Iterator, Optional, TextIO
 from loguru import logger
 
 from core.storage.google import StorageBucketClient
-from core.teardown.types import GitHubRepoMetadata
+
+from .abstract_storage_adaptor import StorageAdaptorInterface
+from .types import GitHubRepoMetadata
 
 logger = logger.bind(name=__name__)
-
-
-class StorageAdaptorInterface(ABC):
-    @abstractmethod
-    def create_repo_folder(self, metadata: GitHubRepoMetadata, repo_hash: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def find_cached_teardown(
-        self, metadata: GitHubRepoMetadata, repo_hash: str
-    ) -> Optional[Path]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_teardown_folder_path(self, metadata: GitHubRepoMetadata) -> Path:
-        raise NotImplementedError
-
-    @abstractmethod
-    def save_teardown_analysis(
-        self, temp_dir: Path, metadata: GitHubRepoMetadata
-    ) -> Optional[Path]:
-        raise NotImplementedError
-
-    @abstractmethod
-    @contextmanager
-    def open_teardown_analysis(self, analysis_file_path: Path) -> Iterator[TextIO]:
-        raise NotImplementedError
 
 
 class GoogleStorageAdaptor(StorageAdaptorInterface):
@@ -90,7 +64,9 @@ class GoogleStorageAdaptor(StorageAdaptorInterface):
             return None
 
     @contextmanager
-    def open_teardown_analysis(self, analysis_file_path_absolute: Path) -> Iterator[TextIO]:
+    def open_teardown_analysis(
+        self, analysis_file_path_absolute: Path
+    ) -> Iterator[TextIO]:
         blob_path = analysis_file_path_absolute.as_posix()
         content = self.storage_client.read_text(blob_path)
 

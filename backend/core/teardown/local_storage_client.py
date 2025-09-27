@@ -7,7 +7,7 @@ from loguru import logger
 
 from core.teardown.types import GitHubRepoMetadata
 
-from .storage_adaptor import StorageAdaptorInterface
+from .abstract_storage_adaptor import StorageAdaptorInterface
 
 logger = logger.bind(name=__name__)
 
@@ -57,7 +57,9 @@ class LocalStorageClient(StorageAdaptorInterface):
             return None
 
     @contextmanager
-    def open_teardown_analysis(self, analysis_file_path_absolute: Path) -> Iterator[TextIO]:
+    def open_teardown_analysis(
+        self, analysis_file_path_absolute: Path
+    ) -> Iterator[TextIO]:
         analysis_path = analysis_file_path_absolute.absolute()
         with open(analysis_path, "r") as f:
             yield f

@@ -1,7 +1,7 @@
 from loguru import logger
 
 from core.sockets.claude_sdk_actor import ClaudeSDKActor
-from core.teardown.storage_adaptor import GoogleStorageAdaptor
+from core.teardown.google_storage_adaptor import GoogleStorageAdaptor
 
 from . import sio
 
