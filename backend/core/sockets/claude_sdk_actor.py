@@ -18,9 +18,9 @@ from loguru import logger
 from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
+from core.teardown.abstract_storage_adaptor import StorageAdaptorInterface
 from core.teardown.git_repo_processor import RepoProcessor
 from core.teardown.local_storage_client import LocalStorageClient
-from core.teardown.abstract_storage_adaptor import StorageAdaptorInterface
 from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
 
 from . import sio
@@ -280,7 +280,9 @@ class ClaudeSDKActor:
         ) as f:
             content = f.read()
 
-        def window_stream(content: str, window_size: int = 100):
+        def window_stream(content: str, window_size: Optional[int] = None):
+            if window_size is None:
+                window_size = len(content)
             for i in range(0, len(content), window_size):
                 yield content[i : i + window_size]
 
