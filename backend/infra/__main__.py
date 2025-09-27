@@ -16,7 +16,7 @@ from pulumi_gcp.cloudrun import (
     ServiceTemplateSpecContainerResourcesArgs,
 )
 
-load_dotenv(override=True, dotenv_path=".env.prod")
+load_dotenv(override=True, dotenv_path="../.env.prod")
 
 anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "not even initialized")
 github_token = os.getenv("GITHUB_TOKEN", "not even initialized")
