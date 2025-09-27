@@ -1,10 +1,10 @@
-import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
 from loguru import logger
 
+from core.storage.google import StorageBucketClient
 from core.teardown.types import GitHubRepoMetadata
 
 logger = logger.bind(name=__name__)
@@ -32,44 +32,49 @@ class StorageAdaptorInterface(ABC):
         raise NotImplementedError
 
 
-class LocalStorageClient(StorageAdaptorInterface):
-    def __init__(self, data_dir: Path):
-        self.data_dir = data_dir
+class GoogleStorageAdaptor(StorageAdaptorInterface):
+    def __init__(self):
+        self.data_dir = "teardown"
+        self.storage_client = StorageBucketClient()
 
     def create_repo_folder(self, metadata: GitHubRepoMetadata, repo_hash: str) -> None:
-        """Create a folder for this repo."""
-        path = self.data_dir / metadata.full_name / repo_hash
-        path.mkdir(exist_ok=True, parents=True)
-        logger.info(f"Created repo folder: {path}")
+        logger.info(f"Creating repo folder: {metadata.full_name}/{repo_hash}")
+        self.storage_client.create_folder(
+            f"{self.data_dir}/{metadata.full_name}/{repo_hash}"
+        )
+        logger.info(f"Created repo folder: {metadata.full_name}/{repo_hash}")
 
     def find_cached_teardown(
         self, metadata: GitHubRepoMetadata, repo_hash: str
     ) -> Optional[Path]:
-        """Find a cached teardown for this repo."""
-        analysis_folder_path = self.data_dir / metadata.full_name / repo_hash
-        for file_path in analysis_folder_path.glob("analysis.md"):
-            logger.info(f"Found cached teardown: {file_path}")
-            return file_path
+        logger.info(f"Finding cached teardown: {metadata.full_name}/{repo_hash}")
+        expected_path = f"{self.data_dir}/{metadata.full_name}/{repo_hash}/analysis.md"
+        if self.storage_client.exists(expected_path):
+            logger.info(f"Found cached teardown: {metadata.full_name}/{repo_hash}")
+            return Path(expected_path)
+        logger.info(f"No cached teardown found: {metadata.full_name}/{repo_hash}")
         return None
 
     def get_teardown_folder_path(self, metadata: GitHubRepoMetadata) -> Path:
-        """Get the path to the teardown for this repo."""
-        return self.data_dir / f"{metadata.full_name}/{metadata.latest_commit.sha}"
+        logger.info(
+            f"Getting teardown folder path: {metadata.full_name}/{metadata.latest_commit.sha}"
+        )
+        return Path(
+            f"{self.data_dir}/{metadata.full_name}/{metadata.latest_commit.sha}"
+        )
 
     def save_teardown_analysis(
         self, temp_dir: Path, metadata: GitHubRepoMetadata
     ) -> Path:
-        """Copy the generated teardown from temp dir to data dir."""
         source_file = Path(temp_dir) / "analysis.md"
-
         if not source_file.exists():
             raise FileNotFoundError(f"Teardown file not found at {source_file}")
 
-        target_filename = "analysis.md"
-        target_folder = self.get_teardown_folder_path(metadata)
-        target_file = target_folder / target_filename
-
-        shutil.copy2(source_file, target_file)
-        logger.info(f"Saved teardown to {target_file}")
-
-        return target_file
+        save_location = f"{self.data_dir}/{metadata.full_name}/{metadata.latest_commit.sha}/analysis.md"
+        logger.info(f"Saving teardown analysis to: {save_location}")
+        self.storage_client.upload_file(
+            source_file,
+            save_location,
+        )
+        logger.info(f"Saved teardown analysis to: {save_location}")
+        return Path(save_location)

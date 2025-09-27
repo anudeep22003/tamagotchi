@@ -19,7 +19,8 @@ from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 from core.teardown.git_repo_processor import RepoProcessor
-from core.teardown.storage_adaptor import LocalStorageClient, StorageAdaptorInterface
+from core.teardown.local_storage_client import LocalStorageClient
+from core.teardown.storage_adaptor import StorageAdaptorInterface
 from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
 
 from . import sio
@@ -351,7 +352,7 @@ class ClaudeSDKActor:
                 model=self.model,
             )
             await self.close_claude_stream(sid, request_id, stream_id)
-            analysis_file_path = self.repo_processor.save_teardown_analysis(
+            analysis_file_path = self.storage_client.save_teardown_analysis(
                 repo_directory, result.metadata
             )
             await self.stream_analysis(sid, request_id, stream_id, analysis_file_path)
