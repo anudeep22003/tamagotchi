@@ -2,12 +2,14 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from core.sockets.envelope_type import AliasedBaseModel
 
 router = APIRouter(prefix="/session")
 
 
-class Session(BaseModel):
+class Session(AliasedBaseModel):
     session_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sids: set[str] = Field(default_factory=set)
@@ -16,8 +18,13 @@ class Session(BaseModel):
 sessions: dict[str, Session] = {}
 
 
+class CreateSessionResponse(AliasedBaseModel):
+    message: str
+    session_id: str
+
+
 @router.post("/create")
-async def create_session(response: Response) -> dict[str, str]:
+async def create_session(response: Response) -> CreateSessionResponse:
     session_id = str(uuid.uuid4())
     response.set_cookie(
         key="session_id",
@@ -28,10 +35,10 @@ async def create_session(response: Response) -> dict[str, str]:
         max_age=3600,  # 1 hour
         path="/",
     )
-    return {"message": "session created", "session_id": session_id}
+    return CreateSessionResponse(message="session created", session_id=session_id)
 
 
-class ValidateSessionResponse(BaseModel):
+class ValidateSessionResponse(AliasedBaseModel):
     valid: bool
     message: str
     session: Session | None = None
@@ -62,7 +69,9 @@ async def destroy_session(request: Request) -> dict[str, str]:
     if session_id is None:
         return {"message": "No session found in cookies"}
     if session_id not in sessions:
-        return {"message": "session found in cookies, but no active session with this id found."}
+        return {
+            "message": "session found in cookies, but no active session with this id found."
+        }
     session = sessions[session_id]
     session.sids.clear()
     del sessions[session_id]

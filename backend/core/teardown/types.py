@@ -1,10 +1,12 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from core.sockets.envelope_type import AliasedBaseModel
 
 
-class CommitInfo(BaseModel):
+class CommitInfo(AliasedBaseModel):
     """Information about a Git commit."""
 
     sha: str
@@ -15,7 +17,7 @@ class CommitInfo(BaseModel):
     url: str
 
 
-class LicenseInfo(BaseModel):
+class LicenseInfo(AliasedBaseModel):
     """Repository license information."""
 
     name: str
@@ -23,7 +25,7 @@ class LicenseInfo(BaseModel):
     url: Optional[str] = None
 
 
-class ParentRepoInfo(BaseModel):
+class ParentRepoInfo(AliasedBaseModel):
     """Parent repository information for forks."""
 
     full_name: str
@@ -31,7 +33,7 @@ class ParentRepoInfo(BaseModel):
     stargazers_count: int
 
 
-class GitHubRepoError(BaseModel):
+class GitHubRepoError(AliasedBaseModel):
     """Error information when GitHub API calls fail."""
 
     owner: str
@@ -42,7 +44,7 @@ class GitHubRepoError(BaseModel):
     error_type: Optional[str] = None
 
 
-class GitHubRepoMetadata(BaseModel):
+class GitHubRepoMetadata(AliasedBaseModel):
     """Comprehensive GitHub repository metadata."""
 
     # Basic repository information
@@ -103,12 +105,12 @@ class GitHubRepoMetadata(BaseModel):
 GitHubRepoResult = GitHubRepoMetadata | GitHubRepoError
 
 
-class ProcessRepoResultCache(BaseModel):
+class ProcessRepoResultCache(AliasedBaseModel):
     cached_file_path: Path
     metadata: GitHubRepoMetadata
 
 
-class ProcessRepoResultNoCache(BaseModel):
+class ProcessRepoResultNoCache(AliasedBaseModel):
     temp_dir: Path
     metadata: GitHubRepoMetadata
 
