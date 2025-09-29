@@ -41,7 +41,6 @@ async def create_session(response: Response) -> CreateSessionResponse:
 class ValidateSessionResponse(AliasedBaseModel):
     valid: bool
     message: str
-    session: Session | None = None
 
 
 @router.get("/validate")
@@ -49,18 +48,19 @@ async def validate_session(request: Request) -> ValidateSessionResponse:
     session_id = request.cookies.get("session_id")
     if session_id is None:
         return ValidateSessionResponse(
-            valid=False, message="No session found in cookies", session=None
+            valid=False, message="No session found in cookies"
         )
     if session_id not in sessions:
         return ValidateSessionResponse(
             valid=False,
             message="session found in cookies, but no active session with this id found.",
-            session=None,
         )
-    session = sessions[session_id]
-    return ValidateSessionResponse(
-        valid=True, message="session validated", session=session
-    )
+    return ValidateSessionResponse(valid=True, message="session validated")
+
+
+class DestroySessionResponse(AliasedBaseModel):
+    message: str
+    session_id: str
 
 
 @router.post("/destroy")
