@@ -49,18 +49,18 @@ export const AppHeader = ({ title, subtitle, badge, onNewAnalysis }: AppHeaderPr
   return (
     <>
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-6">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+          <div className="flex items-center space-x-2 md:space-x-4 min-w-0 flex-1">
+            <div className="flex items-center space-x-2 min-w-0">
+              <h1 className="text-lg md:text-xl font-semibold tracking-tight truncate">{title}</h1>
               {badge && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs flex-shrink-0">
                   {badge}
                 </Badge>
               )}
             </div>
             {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate">{subtitle}</p>
             )}
           </div>
           
@@ -69,10 +69,11 @@ export const AppHeader = ({ title, subtitle, badge, onNewAnalysis }: AppHeaderPr
               onClick={handleNewAnalysisClick}
               variant="outline"
               size="sm"
-              className="gap-2"
+              className="gap-1 md:gap-2 flex-shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
-              Start New Analysis
+              <span className="hidden sm:inline">Start New Analysis</span>
+              <span className="sm:hidden">New</span>
             </Button>
           )}
         </div>
