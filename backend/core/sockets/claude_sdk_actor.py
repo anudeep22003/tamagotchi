@@ -21,7 +21,11 @@ from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelop
 from core.teardown.abstract_storage_adaptor import StorageAdaptorInterface
 from core.teardown.git_repo_processor import RepoProcessor
 from core.teardown.local_storage_client import LocalStorageClient
-from core.teardown.types import ProcessRepoResultCache, ProcessRepoResultNoCache
+from core.teardown.types import (
+    GitHubRepoMetadata,
+    ProcessRepoResultCache,
+    ProcessRepoResultNoCache,
+)
 
 from . import sio
 
@@ -324,6 +328,18 @@ class ClaudeSDKActor:
             to=sid,
         )
 
+    async def stream_repo_metadata(
+        self,
+        sid: str,
+        metadata: GitHubRepoMetadata,
+    ) -> None:
+        logger.info(f"Streaming repository metadata: {metadata}")
+        await sio.emit(
+            "s2c.github.metadata",
+            metadata.model_dump_json(),
+            to=sid,
+        )
+
     async def handle_repo_teardown(
         self,
         sid: str,
@@ -335,6 +351,10 @@ class ClaudeSDKActor:
         repo_directory = None
         try:
             result = self.repo_processor.process_repo_url(repo_url)
+            metadata = result.metadata
+
+            await self.stream_repo_metadata(sid, metadata)
+
             if isinstance(result, ProcessRepoResultCache):
                 await self.close_claude_stream(sid, request_id, stream_id)
                 analysis_file_path = result.cached_file_path

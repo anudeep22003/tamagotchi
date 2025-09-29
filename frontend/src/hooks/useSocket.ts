@@ -161,6 +161,19 @@ export const useSocket = () => {
       }
     );
 
+    socket.on("s2c.github.metadata", (rawMessage: string) => {
+      try {
+        const data: object = JSON.parse(rawMessage);
+        console.log("github metadata", data);
+      } catch (error) {
+        console.error(
+          "Error parsing github metadata:",
+          error,
+          rawMessage
+        );
+      }
+    });
+
     socketRef.current = socket;
 
     return () => {
