@@ -272,15 +272,24 @@ export const RepositoryInput = () => {
               Current Limitations
             </div>
             <div className="text-xs text-muted-foreground space-y-1 pl-6">
+              <p>• Best for smaller repos (&lt;1000 commits, ~100MB)</p>
+              <p>
+                • Large repos may have too many files for effective
+                analysis
+              </p>
               <p>
                 • Analysis takes 5+ minutes (complex repos may take
                 longer)
+              </p>
+              <p>• No option to add your own API key.</p>
+              <p>
+                • Added personal key, but depending on how many people
+                use it it might run
               </p>
               <p>
                 • Socket disconnection requires restart (caching
                 planned)
               </p>
-              <p>• Repository size limited to ~100MB</p>
               <p>
                 • New repos analyzed from scratch (previous analyses
                 cached)
