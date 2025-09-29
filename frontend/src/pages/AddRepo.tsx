@@ -17,6 +17,7 @@ import { useMessageStore } from "@/store/useMessageStore";
 import { useAppContext } from "@/context/AppContext";
 import { AnalysisErrorDialog } from "@/components/AnalysisErrorDialog";
 import { usePostHog } from "posthog-js/react";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 export interface Repository {
   name: string;
@@ -81,6 +82,7 @@ const SampleRepos = ({
 };
 
 const AddRepoContent = () => {
+  usePageTracking();
   const posthog = usePostHog();
   const { status, setStatus } = useRepoContext();
   const { setInputText } = useAppContext();
