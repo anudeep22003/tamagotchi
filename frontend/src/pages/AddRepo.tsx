@@ -133,25 +133,27 @@ const AddRepoContent = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <AppHeader
-        title="GitHub Repository Analyzer"
-        subtitle="Analyze and understand any public GitHub repository"
-        badge="Beta"
-        onNewAnalysis={handleNewAnalysis}
-      />
+      <div className="sticky top-0 z-10 bg-background">
+        <AppHeader
+          title="GitHub Repository Analyzer"
+          subtitle="Analyze and understand any public GitHub repository"
+          badge="Beta"
+          onNewAnalysis={handleNewAnalysis}
+        />
 
-      <MobileViewSwitcher
-        currentView={mobileView}
-        onViewChange={handleMobileViewChange}
-        showAnalysis={shouldShowSwitcher}
-      />
+        <MobileViewSwitcher
+          currentView={mobileView}
+          onViewChange={handleMobileViewChange}
+          showAnalysis={shouldShowSwitcher}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile View */}
-        <div className="md:hidden flex flex-col h-full">
+        <div className="md:hidden flex flex-col h-full overflow-hidden relative">
           {/* Input/Repository View */}
           <div
-            className={`flex-1 transition-transform duration-300 ${
+            className={`absolute inset-0 transition-transform duration-300 ${
               mobileView === "analysis"
                 ? "-translate-x-full"
                 : "translate-x-0"
@@ -206,7 +208,7 @@ const AddRepoContent = () => {
 
           {/* Analysis View */}
           <div
-            className={`absolute inset-x-0 bottom-0 top-0 transition-transform duration-300 ${
+            className={`absolute inset-0 transition-transform duration-300 ${
               mobileView === "analysis"
                 ? "translate-x-0"
                 : "translate-x-full"
