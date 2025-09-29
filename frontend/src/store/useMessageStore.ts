@@ -20,12 +20,18 @@ export type MessageType = "human" | Actor;
 
 export type TypedMessage = BaseMessage;
 
+export interface AnalysisError {
+  message: string;
+  details?: string;
+}
+
 export interface MessageState {
   allMessages: TypedMessage[];
   activeTab: Actor | null;
   isTabManuallySelected: boolean;
   streamingActors: Set<Actor>;
   githubMetadata: GitHubRepoMetadata | null;
+  analysisError: AnalysisError | null;
   addMessage: (message: TypedMessage) => void;
   createStreamMessage: (
     streamId: string,
@@ -40,6 +46,7 @@ export interface MessageState {
   addStreamingActor: (actor: Actor) => void;
   removeStreamingActor: (actor: Actor) => void;
   setGithubMetadata: (metadata: GitHubRepoMetadata | null) => void;
+  setAnalysisError: (error: AnalysisError | null) => void;
   clearAllState: () => void;
 }
 
@@ -51,6 +58,7 @@ export const useMessageStore = create<MessageState>()(
       isTabManuallySelected: false,
       streamingActors: new Set(),
       githubMetadata: null,
+      analysisError: null,
       addMessage: (message) =>
         set((state) => ({
           allMessages: [...state.allMessages, message],
@@ -143,6 +151,9 @@ export const useMessageStore = create<MessageState>()(
       setGithubMetadata: (metadata) => {
         set(() => ({ githubMetadata: metadata }));
       },
+      setAnalysisError: (error) => {
+        set(() => ({ analysisError: error }));
+      },
       clearAllState: () => {
         set(() => ({
           allMessages: [],
@@ -150,6 +161,7 @@ export const useMessageStore = create<MessageState>()(
           isTabManuallySelected: false,
           streamingActors: new Set(),
           githubMetadata: null,
+          analysisError: null,
         }));
       },
     }),

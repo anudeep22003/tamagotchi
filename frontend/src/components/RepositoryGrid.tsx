@@ -39,9 +39,9 @@ const RepositoryCard = ({
             </h3>
             <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
           </div>
-          <div className="text-xs text-muted-foreground truncate">
+          {/* <div className="text-xs text-muted-foreground truncate">
             {repository.url}
-          </div>
+          </div> */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3" />

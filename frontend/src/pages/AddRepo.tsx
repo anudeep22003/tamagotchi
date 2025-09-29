@@ -15,6 +15,7 @@ import {
 import { GenerativeArea } from "@/components/GenerativeArea";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useAppContext } from "@/context/AppContext";
+import { AnalysisErrorDialog } from "@/components/AnalysisErrorDialog";
 
 export interface Repository {
   name: string;
@@ -90,6 +91,9 @@ const AddRepoContent = () => {
   const setGithubMetadata = useMessageStore(
     (state) => state.setGithubMetadata
   );
+  const analysisError = useMessageStore((state) => state.analysisError);
+  const setAnalysisError = useMessageStore((state) => state.setAnalysisError);
+  const clearAllState = useMessageStore((state) => state.clearAllState);
 
   const handleRepositoryClick = (repository: Repository) => {
     setInputText(repository.url);
@@ -104,8 +108,13 @@ const AddRepoContent = () => {
   };
 
   const handleNewAnalysis = () => {
+    clearAllState();
     setStatus("idle");
     setMobileView("input"); // Return to input view
+  };
+
+  const handleErrorDialogClose = () => {
+    setAnalysisError(null);
   };
 
   const handleMobileViewChange = (view: "input" | "analysis") => {
@@ -194,7 +203,7 @@ const AddRepoContent = () => {
                   </div>
                 )}
 
-                {status !== "idle" && !githubMetadata && (
+                {status !== "idle" && !githubMetadata && !analysisError && (
                   <div className="flex-1 flex items-center justify-center p-8">
                     <div className="text-center text-muted-foreground">
                       <h3 className="text-lg font-medium mb-2">
@@ -240,7 +249,7 @@ const AddRepoContent = () => {
               <div className="p-6 h-full flex flex-col">
                 <RepositoryInput />
 
-                <div className="mt-8 flex-1">
+                {/* <div className="mt-8 flex-1">
                   <div className="text-center text-muted-foreground py-12">
                     <h3 className="text-lg font-medium mb-2">
                       Ready to Analyze
@@ -253,7 +262,7 @@ const AddRepoContent = () => {
                       documentation.
                     </p>
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
           </div>
@@ -268,6 +277,13 @@ const AddRepoContent = () => {
           )}
         </div>
       </div>
+
+      {/* Error Dialog */}
+      <AnalysisErrorDialog
+        error={analysisError}
+        onStartNewAnalysis={handleNewAnalysis}
+        onClose={handleErrorDialogClose}
+      />
     </div>
   );
 };

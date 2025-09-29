@@ -24,6 +24,10 @@ export const useSocket = () => {
     (state) => state.createStreamMessage
   );
 
+  const setAnalysisError = useMessageStore(
+    (state) => state.setAnalysisError
+  );
+
   const onStreamChunk = useCallback(
     (envelope: Envelope<{ delta: string }>) => {
       updateStreamingMessage(envelope);
@@ -118,7 +122,32 @@ export const useSocket = () => {
       onStreamEnd("writer");
     });
 
-    socket.on("s2c.claude.stream.end", () => {
+    socket.on("s2c.claude.stream.end", (rawMessage: string) => {
+      try {
+        const envelope = JSON.parse(rawMessage);
+        
+        // Check if this is an error
+        if (envelope.data?.finish_reason === "error" && envelope.data?.error) {
+          const errorMessage = envelope.data.error;
+          
+          // Parse repository size errors
+          const sizeMatch = errorMessage.match(/Repository too large: ([\d.]+)MB/);
+          if (sizeMatch) {
+            setAnalysisError({
+              message: "Repository Too Large",
+              details: `The repository is ${sizeMatch[1]}MB, which exceeds the current limit of ~100MB. Please try with a smaller repository.`
+            });
+          } else {
+            setAnalysisError({
+              message: "Analysis Error",
+              details: errorMessage
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing claude stream end:", error, rawMessage);
+      }
+      
       onStreamEnd("claude");
     });
 
@@ -189,6 +218,7 @@ export const useSocket = () => {
     onStreamEnd,
     createStreamMessage,
     setGithubMetadata,
+    setAnalysisError,
   ]);
 
   return {
