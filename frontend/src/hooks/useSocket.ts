@@ -4,10 +4,14 @@ import { BACKEND_URL } from "@/constants";
 import { Socket } from "socket.io-client";
 import type { Actor, Envelope } from "@/types/envelopeType";
 import { useMessageStore } from "@/store/useMessageStore";
+import type { GitHubRepoMetadata } from "@/lib/githubMetadataType";
 
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const setGithubMetadata = useMessageStore(
+    (state) => state.setGithubMetadata
+  );
 
   const updateStreamingMessage = useMessageStore(
     (state) => state.updateStreamingMessage
@@ -163,8 +167,9 @@ export const useSocket = () => {
 
     socket.on("s2c.github.metadata", (rawMessage: string) => {
       try {
-        const data: object = JSON.parse(rawMessage);
+        const data: GitHubRepoMetadata = JSON.parse(rawMessage);
         console.log("github metadata", data);
+        setGithubMetadata(data);
       } catch (error) {
         console.error(
           "Error parsing github metadata:",
@@ -179,7 +184,7 @@ export const useSocket = () => {
     return () => {
       socket.disconnect();
     };
-  }, [onStreamChunk, onStreamEnd, createStreamMessage]);
+  }, [onStreamChunk, onStreamEnd, createStreamMessage, setGithubMetadata]);
 
   return {
     isConnected,

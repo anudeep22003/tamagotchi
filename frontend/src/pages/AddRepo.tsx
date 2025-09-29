@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { RepositoryInput } from "@/components/RepositoryInput";
 import { RepositoryGrid } from "@/components/RepositoryGrid";
+import { RepositoryMetadata } from "@/components/RepositoryMetadata";
 import { repos } from "@/data/hardcodedRepos";
 import {
   createContext,
@@ -9,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { GenerativeArea } from "@/components/GenerativeArea";
+import { useMessageStore } from "@/store/useMessageStore";
 
 export interface Repository {
   name: string;
@@ -36,6 +38,7 @@ export const RepoProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useRepoContext = () => {
   const context = useContext(RepoContext);
   if (!context) {
@@ -71,9 +74,21 @@ const SampleRepos = ({
 };
 const AddRepoContent = () => {
   const { status, setStatus } = useRepoContext();
+  const githubMetadata = useMessageStore(
+    (state) => state.githubMetadata
+  );
+  const setGithubMetadata = useMessageStore(
+    (state) => state.setGithubMetadata
+  );
+
   const handleRepositoryClick = (repository: Repository) => {
     console.log("Repository clicked:", repository.name);
     setStatus("started");
+  };
+
+  const handleClearMetadata = () => {
+    setGithubMetadata(null);
+    setStatus("idle");
   };
 
   return (
@@ -86,23 +101,30 @@ const AddRepoContent = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-1/2 border-r">
-          <div className="p-6 h-full flex flex-col">
-            <RepositoryInput />
+          {githubMetadata ? (
+            <RepositoryMetadata
+              metadata={githubMetadata}
+              onClear={handleClearMetadata}
+            />
+          ) : (
+            <div className="p-6 h-full flex flex-col">
+              <RepositoryInput />
 
-            <div className="mt-8 flex-1">
-              <div className="text-center text-muted-foreground py-12">
-                <h3 className="text-lg font-medium mb-2">
-                  Ready to Analyze
-                </h3>
-                <p className="text-sm">
-                  Enter a GitHub repository URL above to start the
-                  analysis process. We'll provide detailed insights
-                  about the codebase structure, architecture patterns,
-                  and generate comprehensive documentation.
-                </p>
+              <div className="mt-8 flex-1">
+                <div className="text-center text-muted-foreground py-12">
+                  <h3 className="text-lg font-medium mb-2">
+                    Ready to Analyze
+                  </h3>
+                  <p className="text-sm">
+                    Enter a GitHub repository URL above to start the
+                    analysis process. We'll provide detailed insights
+                    about the codebase structure, architecture patterns,
+                    and generate comprehensive documentation.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
         {status === "idle" ? (
           <SampleRepos handleRepositoryClick={handleRepositoryClick} />

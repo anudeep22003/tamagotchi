@@ -1,3 +1,4 @@
+import type { GitHubRepoMetadata } from "@/lib/githubMetadataType";
 import type { Actor, Envelope } from "@/types/envelopeType";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -24,6 +25,7 @@ export interface MessageState {
   activeTab: Actor | null;
   isTabManuallySelected: boolean;
   streamingActors: Set<Actor>;
+  githubMetadata: GitHubRepoMetadata | null;
   addMessage: (message: TypedMessage) => void;
   createStreamMessage: (
     streamId: string,
@@ -37,6 +39,7 @@ export interface MessageState {
   setActiveTab: (actor: Actor, isManual?: boolean) => void;
   addStreamingActor: (actor: Actor) => void;
   removeStreamingActor: (actor: Actor) => void;
+  setGithubMetadata: (metadata: GitHubRepoMetadata | null) => void;
 }
 
 export const useMessageStore = create<MessageState>()(
@@ -46,6 +49,7 @@ export const useMessageStore = create<MessageState>()(
       activeTab: null,
       isTabManuallySelected: false,
       streamingActors: new Set(),
+      githubMetadata: null,
       addMessage: (message) =>
         set((state) => ({
           allMessages: [...state.allMessages, message],
@@ -134,6 +138,9 @@ export const useMessageStore = create<MessageState>()(
           newStreamingActors.delete(actor);
           return { streamingActors: newStreamingActors };
         });
+      },
+      setGithubMetadata: (metadata) => {
+        set(() => ({ githubMetadata: metadata }));
       },
     }),
 
