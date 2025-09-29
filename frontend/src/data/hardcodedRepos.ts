@@ -11,12 +11,12 @@ export const repos: Repository[] = [
     languages: ["TypeScript", "JavaScript"],
   },
   {
-    name: "ryanmcdermott/clean-code-javascript",
-    url: "https://github.com/ryanmcdermott/clean-code-javascript",
-    stars: 85000,
-    commits: 45,
-    contributors: 12,
-    languages: ["JavaScript"],
+    name: "anudeep22003/tamagotchi",
+    url: "https://github.com/anudeep22003/tamagotchi",
+    stars: 0,
+    commits: 71,
+    contributors: 1,
+    languages: ["TypeScript", "Python"],
   },
   {
     name: "abinthomasonline/repo2txt",
