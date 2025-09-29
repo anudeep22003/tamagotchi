@@ -1,11 +1,11 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type Repository } from "@/pages/AddRepo";
-import { Star, GitCommit, Users } from "lucide-react";
+import { Star, GitCommit, Users, ExternalLink } from "lucide-react";
 
 interface RepositoryCardProps {
   repository: Repository;
-  onClick?: () => void;
+  onClick?: (repository: Repository) => void;
 }
 
 const RepositoryCard = ({
@@ -22,16 +22,26 @@ const RepositoryCard = ({
     return num.toString();
   };
 
+  const handleClick = () => {
+    onClick?.(repository);
+  };
+
   return (
     <Card
       className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] group"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardHeader className="pb-3">
         <div className="space-y-2">
-          <h3 className="font-medium text-sm truncate group-hover:text-primary">
-            {repository.name}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm truncate group-hover:text-primary">
+              {repository.name}
+            </h3>
+            <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
+          </div>
+          <div className="text-xs text-muted-foreground truncate">
+            {repository.url}
+          </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3" />
@@ -85,7 +95,7 @@ export const RepositoryGrid = ({
         <RepositoryCard
           key={`${repo.name}-${index}`}
           repository={repo}
-          onClick={() => onRepositoryClick?.(repo)}
+          onClick={onRepositoryClick}
         />
       ))}
     </div>

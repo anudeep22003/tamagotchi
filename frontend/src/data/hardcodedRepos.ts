@@ -3,6 +3,7 @@ import { type Repository } from "@/pages/AddRepo";
 export const repos: Repository[] = [
   {
     name: "react/react",
+    url: "https://github.com/facebook/react",
     stars: 203000,
     commits: 15234,
     contributors: 1642,
@@ -10,6 +11,7 @@ export const repos: Repository[] = [
   },
   {
     name: "tensorflow/tensorflow",
+    url: "https://github.com/tensorflow/tensorflow",
     stars: 176000,
     commits: 89234,
     contributors: 3421,
@@ -17,6 +19,7 @@ export const repos: Repository[] = [
   },
   {
     name: "microsoft/vscode",
+    url: "https://github.com/microsoft/vscode",
     stars: 148000,
     commits: 92145,
     contributors: 1532,
@@ -24,6 +27,7 @@ export const repos: Repository[] = [
   },
   {
     name: "facebook/react-native",
+    url: "https://github.com/facebook/react-native",
     stars: 112000,
     commits: 23421,
     contributors: 892,
@@ -31,6 +35,7 @@ export const repos: Repository[] = [
   },
   {
     name: "angular/angular",
+    url: "https://github.com/angular/angular",
     stars: 89000,
     commits: 25632,
     contributors: 1432,
@@ -38,6 +43,7 @@ export const repos: Repository[] = [
   },
   {
     name: "vuejs/vue",
+    url: "https://github.com/vuejs/vue",
     stars: 203000,
     commits: 12342,
     contributors: 421,
@@ -45,6 +51,7 @@ export const repos: Repository[] = [
   },
   {
     name: "pytorch/pytorch",
+    url: "https://github.com/pytorch/pytorch",
     stars: 69000,
     commits: 45632,
     contributors: 2341,
@@ -52,6 +59,7 @@ export const repos: Repository[] = [
   },
   {
     name: "kubernetes/kubernetes",
+    url: "https://github.com/kubernetes/kubernetes",
     stars: 98000,
     commits: 112342,
     contributors: 3421,
@@ -59,6 +67,7 @@ export const repos: Repository[] = [
   },
   {
     name: "django/django",
+    url: "https://github.com/django/django",
     stars: 71000,
     commits: 34521,
     contributors: 2341,
@@ -66,6 +75,7 @@ export const repos: Repository[] = [
   },
   {
     name: "laravel/laravel",
+    url: "https://github.com/laravel/laravel",
     stars: 73000,
     commits: 23421,
     contributors: 892,
@@ -73,6 +83,7 @@ export const repos: Repository[] = [
   },
   {
     name: "spring-projects/spring-boot",
+    url: "https://github.com/spring-projects/spring-boot",
     stars: 68000,
     commits: 28932,
     contributors: 723,
@@ -80,6 +91,7 @@ export const repos: Repository[] = [
   },
   {
     name: "nodejs/node",
+    url: "https://github.com/nodejs/node",
     stars: 94000,
     commits: 42312,
     contributors: 3212,
@@ -87,6 +99,7 @@ export const repos: Repository[] = [
   },
   {
     name: "rust-lang/rust",
+    url: "https://github.com/rust-lang/rust",
     stars: 84000,
     commits: 123421,
     contributors: 3421,
@@ -94,6 +107,7 @@ export const repos: Repository[] = [
   },
   {
     name: "golang/go",
+    url: "https://github.com/golang/go",
     stars: 112000,
     commits: 56234,
     contributors: 2341,
@@ -101,6 +115,7 @@ export const repos: Repository[] = [
   },
   {
     name: "rails/rails",
+    url: "https://github.com/rails/rails",
     stars: 52000,
     commits: 89234,
     contributors: 4231,
@@ -108,6 +123,7 @@ export const repos: Repository[] = [
   },
   {
     name: "flutter/flutter",
+    url: "https://github.com/flutter/flutter",
     stars: 156000,
     commits: 34521,
     contributors: 892,
@@ -115,6 +131,7 @@ export const repos: Repository[] = [
   },
   {
     name: "electron/electron",
+    url: "https://github.com/electron/electron",
     stars: 105000,
     commits: 23421,
     contributors: 1232,
@@ -122,6 +139,7 @@ export const repos: Repository[] = [
   },
   {
     name: "docker/docker",
+    url: "https://github.com/docker/docker",
     stars: 65000,
     commits: 45632,
     contributors: 2341,
@@ -129,6 +147,7 @@ export const repos: Repository[] = [
   },
   {
     name: "pandas-dev/pandas",
+    url: "https://github.com/pandas-dev/pandas",
     stars: 38000,
     commits: 34521,
     contributors: 1892,
@@ -136,6 +155,7 @@ export const repos: Repository[] = [
   },
   {
     name: "scikit-learn/scikit-learn",
+    url: "https://github.com/scikit-learn/scikit-learn",
     stars: 54000,
     commits: 42312,
     contributors: 2341,

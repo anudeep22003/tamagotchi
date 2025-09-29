@@ -15,7 +15,7 @@ import {
   checkRepoVisibility,
   getValidationStatus,
 } from "@/lib/githubValidation";
-import { Github, Zap, Loader2 } from "lucide-react";
+import { Github, Zap, Loader2, ExternalLink, Star, Info, Clock, Code, Globe } from "lucide-react";
 import { useRepoContext } from "@/pages/AddRepo";
 import { useMessageStore } from "@/store/useMessageStore";
 
@@ -178,6 +178,102 @@ export const RepositoryInput = () => {
             • Analysis includes code structure, diagrams, and
             documentation
           </p>
+        </div>
+
+        {/* Project Information Section */}
+        <div className="space-y-4 pt-4 border-t border-border">
+          {/* How It Works */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Info className="h-4 w-4" />
+              How It Works
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1 pl-6">
+              <p>• Fetches repository metadata using GitHub API</p>
+              <p>• Clones repo into a secure container environment</p>
+              <p>• Runs Claude Code SDK for comprehensive analysis</p>
+              <p>• Streams real-time progress and generates detailed insights</p>
+            </div>
+          </div>
+
+          {/* Current Limitations */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Clock className="h-4 w-4" />
+              Current Limitations
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1 pl-6">
+              <p>• Analysis takes 5+ minutes (complex repos may take longer)</p>
+              <p>• Socket disconnection requires restart (caching planned)</p>
+              <p>• Repository size limited to ~100MB</p>
+              <p>• New repos analyzed from scratch (previous analyses cached)</p>
+            </div>
+          </div>
+
+          {/* Future Plans */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Code className="h-4 w-4" />
+              Planned Improvements
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1 pl-6">
+              <p>• Cloud-based Claude Code for always-on analysis</p>
+              <p>• Pause/resume functionality for mobile workflows</p>
+              <p>• Enhanced output quality and faster processing</p>
+              <p>• Session recovery and progress caching</p>
+            </div>
+          </div>
+
+          {/* Links and Support */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Globe className="h-4 w-4" />
+              Support This Project
+            </div>
+            
+            <div className="space-y-2 pl-6">
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://github.com/Sidebrain/github-repo-understand"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  <Github className="h-3 w-3" />
+                  View on GitHub
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <span className="text-xs text-muted-foreground">•</span>
+                <a
+                  href="https://github.com/Sidebrain/github-repo-understand"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-yellow-400 hover:text-yellow-300 transition-colors"
+                >
+                  <Star className="h-3 w-3" />
+                  Give it a star!
+                </a>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://anudeepy.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  <Globe className="h-3 w-3" />
+                  anudeepy.com
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground pl-6 space-y-1">
+              <p>Found an issue? Want to contribute? Feel free to reach out!</p>
+              <p>Clone the repo and submit PRs - contributions welcome.</p>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

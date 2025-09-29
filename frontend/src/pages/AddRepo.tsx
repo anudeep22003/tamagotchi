@@ -14,9 +14,11 @@ import {
 } from "react";
 import { GenerativeArea } from "@/components/GenerativeArea";
 import { useMessageStore } from "@/store/useMessageStore";
+import { useAppContext } from "@/context/AppContext";
 
 export interface Repository {
   name: string;
+  url: string;
   stars: number;
   commits: number;
   contributors: number;
@@ -62,7 +64,7 @@ const SampleRepos = ({
       <div className="border-b px-6 py-4 flex-shrink-0">
         <h2 className="text-lg font-semibold">Sample Repositories</h2>
         <p className="text-sm text-muted-foreground">
-          Popular repositories that have been analyzed
+          Click on any repository to analyze it
         </p>
       </div>
 
@@ -75,8 +77,10 @@ const SampleRepos = ({
     </div>
   );
 };
+
 const AddRepoContent = () => {
   const { status, setStatus } = useRepoContext();
+  const { setInputText } = useAppContext();
   const [mobileView, setMobileView] = useState<"input" | "analysis">(
     "input"
   );
@@ -87,7 +91,8 @@ const AddRepoContent = () => {
     (state) => state.setGithubMetadata
   );
 
-  const handleRepositoryClick = () => {
+  const handleRepositoryClick = (repository: Repository) => {
+    setInputText(repository.url);
     setStatus("started");
     setMobileView("analysis"); // Switch to analysis view on mobile
   };
@@ -177,7 +182,7 @@ const AddRepoContent = () => {
                         Sample Repositories
                       </h2>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Popular repositories that have been analyzed
+                        Click on any repository to analyze it
                       </p>
                     </div>
                     <div className="px-2">
