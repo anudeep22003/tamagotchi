@@ -21,6 +21,7 @@
     "lucide-react": "^0.542.0",
     "mermaid": "^11.10.1",
     "plugin-react": "^0.0.1-security",
+    "posthog-js": "^1.268.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
