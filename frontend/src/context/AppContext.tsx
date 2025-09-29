@@ -19,6 +19,7 @@ import {
   sendGitHubTeardownMessage,
   sendWriterMessage,
 } from "@/lib/messageSendHandlers";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 interface AppContextType {
   inputText: string;
@@ -38,6 +39,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  usePageTracking();
   const [inputText, setInputText] = useState("");
   const [showGenerative, setShowGenerative] = useState(false);
 

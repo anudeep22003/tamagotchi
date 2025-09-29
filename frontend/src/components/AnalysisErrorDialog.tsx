@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { AnalysisError } from "@/store/useMessageStore";
+import { usePostHog } from "posthog-js/react";
 
 interface AnalysisErrorDialogProps {
   error: AnalysisError | null;
@@ -19,7 +20,11 @@ interface AnalysisErrorDialogProps {
 }
 
 // Simple mobile error dialog
-const MobileErrorDialog = ({ error, onStartNewAnalysis, onClose }: AnalysisErrorDialogProps) => {
+const MobileErrorDialog = ({
+  error,
+  onStartNewAnalysis,
+  onClose,
+}: AnalysisErrorDialogProps) => {
   if (!error) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -34,7 +39,7 @@ const MobileErrorDialog = ({ error, onStartNewAnalysis, onClose }: AnalysisError
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={handleBackdropClick}
     >
@@ -51,10 +56,7 @@ const MobileErrorDialog = ({ error, onStartNewAnalysis, onClose }: AnalysisError
           )}
         </div>
         <div className="space-y-2">
-          <Button
-            onClick={handleNewAnalysis}
-            className="w-full gap-2"
-          >
+          <Button onClick={handleNewAnalysis} className="w-full gap-2">
             <RefreshCw className="h-4 w-4" />
             Start New Analysis
           </Button>
@@ -76,7 +78,16 @@ export const AnalysisErrorDialog = ({
   onStartNewAnalysis,
   onClose,
 }: AnalysisErrorDialogProps) => {
+  const posthog = usePostHog();
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      posthog.capture("analysis_error", {
+        error: error.message,
+      });
+    }
+  }, [error, posthog]);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -84,13 +95,13 @@ export const AnalysisErrorDialog = ({
     };
 
     checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
   if (isMobile) {
     return (
-      <MobileErrorDialog 
+      <MobileErrorDialog
         error={error}
         onStartNewAnalysis={onStartNewAnalysis}
         onClose={onClose}

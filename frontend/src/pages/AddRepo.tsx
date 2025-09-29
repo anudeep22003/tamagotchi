@@ -16,6 +16,7 @@ import { GenerativeArea } from "@/components/GenerativeArea";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useAppContext } from "@/context/AppContext";
 import { AnalysisErrorDialog } from "@/components/AnalysisErrorDialog";
+import { usePostHog } from "posthog-js/react";
 
 export interface Repository {
   name: string;
@@ -80,6 +81,7 @@ const SampleRepos = ({
 };
 
 const AddRepoContent = () => {
+  const posthog = usePostHog();
   const { status, setStatus } = useRepoContext();
   const { setInputText } = useAppContext();
   const [mobileView, setMobileView] = useState<"input" | "analysis">(
@@ -92,10 +94,16 @@ const AddRepoContent = () => {
     (state) => state.setGithubMetadata
   );
   const analysisError = useMessageStore((state) => state.analysisError);
-  const setAnalysisError = useMessageStore((state) => state.setAnalysisError);
+  const setAnalysisError = useMessageStore(
+    (state) => state.setAnalysisError
+  );
   const clearAllState = useMessageStore((state) => state.clearAllState);
 
   const handleRepositoryClick = (repository: Repository) => {
+    posthog.capture("repository_clicked", {
+      repository_name: repository.name,
+      repository_url: repository.url,
+    });
     setInputText(repository.url);
     setStatus("started");
     setMobileView("analysis"); // Switch to analysis view on mobile
@@ -108,6 +116,7 @@ const AddRepoContent = () => {
   };
 
   const handleNewAnalysis = () => {
+    posthog.capture("new_analysis_requested");
     clearAllState();
     setStatus("idle");
     setMobileView("input"); // Return to input view
@@ -203,19 +212,21 @@ const AddRepoContent = () => {
                   </div>
                 )}
 
-                {status !== "idle" && !githubMetadata && !analysisError && (
-                  <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="text-center text-muted-foreground">
-                      <h3 className="text-lg font-medium mb-2">
-                        Ready to Analyze
-                      </h3>
-                      <p className="text-sm">
-                        Analysis is starting. Switch to the Analysis tab
-                        to view progress.
-                      </p>
+                {status !== "idle" &&
+                  !githubMetadata &&
+                  !analysisError && (
+                    <div className="flex-1 flex items-center justify-center p-8">
+                      <div className="text-center text-muted-foreground">
+                        <h3 className="text-lg font-medium mb-2">
+                          Ready to Analyze
+                        </h3>
+                        <p className="text-sm">
+                          Analysis is starting. Switch to the Analysis
+                          tab to view progress.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             )}
           </div>
