@@ -15,13 +15,17 @@ import {
   checkRepoVisibility,
   getValidationStatus,
 } from "@/lib/githubValidation";
-import { Github, Zap } from "lucide-react";
+import { Github, Zap, Loader2 } from "lucide-react";
 import { useRepoContext } from "@/pages/AddRepo";
+import { useMessageStore } from "@/store/useMessageStore";
 
 export const RepositoryInput = () => {
   const { inputText, setInputText, handleGitHubTeardownSendClick } =
     useAppContext();
   const { setStatus } = useRepoContext();
+  const githubMetadata = useMessageStore(
+    (state) => state.githubMetadata
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const [validationState, setValidationState] =
     useState<ValidationState>({
@@ -30,6 +34,8 @@ export const RepositoryInput = () => {
       isPublicRepo: null,
     });
   const [isCheckingRepo, setIsCheckingRepo] = useState(false);
+  const [isWaitingForMetadata, setIsWaitingForMetadata] =
+    useState(false);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,17 +97,26 @@ export const RepositoryInput = () => {
     return () => clearTimeout(timeoutId);
   }, [inputText]);
 
-const validationStatus = getValidationStatus(
+  // Reset waiting state when metadata arrives
+  useEffect(() => {
+    if (githubMetadata && isWaitingForMetadata) {
+      setIsWaitingForMetadata(false);
+    }
+  }, [githubMetadata, isWaitingForMetadata]);
+
+  const validationStatus = getValidationStatus(
     validationState,
     isCheckingRepo
   );
   const isSubmitEnabled =
     validationState.isValidUrl === true &&
     validationState.isGithubUrl === true &&
-    validationState.isPublicRepo === true;
+    validationState.isPublicRepo === true &&
+    !isWaitingForMetadata;
 
   const handleSubmit = useCallback(() => {
     if (isSubmitEnabled) {
+      setIsWaitingForMetadata(true);
       handleGitHubTeardownSendClick();
       setStatus("started");
     }
@@ -146,8 +161,12 @@ const validationStatus = getValidationStatus(
               disabled={!isSubmitEnabled}
               className="gap-2"
             >
-              <Zap className="h-4 w-4" />
-              Analyze
+              {isWaitingForMetadata ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4" />
+              )}
+              {isWaitingForMetadata ? "Analyzing..." : "Analyze"}
             </Button>
           </div>
         </div>

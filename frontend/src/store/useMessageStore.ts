@@ -40,6 +40,7 @@ export interface MessageState {
   addStreamingActor: (actor: Actor) => void;
   removeStreamingActor: (actor: Actor) => void;
   setGithubMetadata: (metadata: GitHubRepoMetadata | null) => void;
+  clearAllState: () => void;
 }
 
 export const useMessageStore = create<MessageState>()(
@@ -141,6 +142,15 @@ export const useMessageStore = create<MessageState>()(
       },
       setGithubMetadata: (metadata) => {
         set(() => ({ githubMetadata: metadata }));
+      },
+      clearAllState: () => {
+        set(() => ({
+          allMessages: [],
+          activeTab: null,
+          isTabManuallySelected: false,
+          streamingActors: new Set(),
+          githubMetadata: null,
+        }));
       },
     }),
 

@@ -91,12 +91,17 @@ const AddRepoContent = () => {
     setStatus("idle");
   };
 
+  const handleNewAnalysis = () => {
+    setStatus("idle");
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <AppHeader
         title="GitHub Repository Analyzer"
         subtitle="Analyze and understand any public GitHub repository"
         badge="Beta"
+        onNewAnalysis={handleNewAnalysis}
       />
 
       <div className="flex-1 flex overflow-hidden">

@@ -184,7 +184,12 @@ export const useSocket = () => {
     return () => {
       socket.disconnect();
     };
-  }, [onStreamChunk, onStreamEnd, createStreamMessage, setGithubMetadata]);
+  }, [
+    onStreamChunk,
+    onStreamEnd,
+    createStreamMessage,
+    setGithubMetadata,
+  ]);
 
   return {
     isConnected,
