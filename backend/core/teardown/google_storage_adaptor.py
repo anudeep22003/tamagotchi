@@ -58,7 +58,7 @@ class GoogleStorageAdaptor(StorageAdaptorInterface):
                 save_location,
             )
             logger.info(f"Saved teardown analysis to: {save_location}")
-            return Path(save_location).absolute()
+            return Path(save_location)
         except Exception as e:
             logger.error(f"Failed to save teardown analysis: {e}")
             return None
