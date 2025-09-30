@@ -70,6 +70,93 @@ class ClaudeSDKActor:
             logger.error(f"Failed to load teardown prompt: {e}")
             return "Please analyze this repository and create a comprehensive teardown."
 
+    def format_teardown_prompt(self, metadata: GitHubRepoMetadata) -> str:
+        """
+        Format the teardown prompt with repository metadata context.
+
+        This enriches the base prompt with key information about the repository
+        to help Claude focus its analysis on the most relevant aspects.
+        """
+        base_prompt = self.load_teardown_prompt()
+
+        # Filter major languages (>10% representation)
+        major_languages = {
+            lang: round(pct, 1)
+            for lang, pct in metadata.language_percentages.items()
+            if pct > 20.0
+        }
+
+        # Format language breakdown for display
+        language_breakdown = (
+            ", ".join(
+                [
+                    f"{lang} ({pct}%)"
+                    for lang, pct in sorted(
+                        major_languages.items(), key=lambda x: x[1], reverse=True
+                    )
+                ]
+            )
+            if major_languages
+            else "Not specified"
+        )
+
+        # Format recent commits (top 3-5)
+        recent_activity_lines = []
+        for commit in metadata.recent_commits[:5]:
+            date = commit.date[:10] if commit.date else "Unknown date"
+            message = (
+                commit.message[:80] + "..."
+                if len(commit.message) > 80
+                else commit.message
+            )
+            recent_activity_lines.append(f"  - {date}: {message} (by {commit.author})")
+
+        recent_activity = (
+            "\n".join(recent_activity_lines)
+            if recent_activity_lines
+            else "  - No recent activity data available"
+        )
+
+        # Build fork context
+        fork_context = ""
+        if metadata.fork and metadata.parent:
+            fork_context = f"\n**Note**: This is a fork of [{metadata.parent.full_name}]({metadata.parent.url}) ({metadata.parent.stargazers_count} stars)"
+
+        # Build topics/tags
+        topics_str = ", ".join(metadata.topics) if metadata.topics else "None"
+
+        # Build license info
+        license_str = (
+            metadata.license.name if metadata.license else "No license specified"
+        )
+
+        # Create the context preamble
+        context = f"""## Repository Context:
+- **Name**: {metadata.full_name}
+- **Description**: {metadata.description or "No description provided"}
+- **URL**: {metadata.url}
+- **Primary Language**: {metadata.primary_language or "Not specified"}
+- **Major Languages (>10% representation)**: {language_breakdown}
+- **Topics/Tags**: {topics_str}
+- **Stars**: {metadata.stargazers_count:,} | **Forks**: {metadata.forks_count:,} | **Open Issues**: {metadata.open_issues_count:,}
+- **Repository Size**: {metadata.size:,} KB
+- **License**: {license_str}
+- **Created**: {metadata.created_at[:10]} | **Last Updated**: {metadata.pushed_at[:10] if metadata.pushed_at else "Unknown"}
+- **Default Branch**: {metadata.default_branch}
+
+### Recent Activity:
+{recent_activity}{fork_context}
+
+---
+
+"""
+
+        formatted_prompt = context + base_prompt
+        logger.info(f"Formatted teardown prompt with metadata for {metadata.full_name}")
+        logger.debug(f"Major languages: {major_languages}")
+
+        return formatted_prompt
+
     def prepare_messages(self, validated_request: ClaudeSDKRequest) -> str:
         if validated_request.repo_url:
             return self.load_teardown_prompt()
@@ -367,8 +454,8 @@ class ClaudeSDKActor:
             else:
                 raise ValueError("Invalid result type")
 
-            # Run Claude SDK teardown
-            teardown_prompt = self.load_teardown_prompt()
+            # Run Claude SDK teardown with formatted prompt including metadata
+            teardown_prompt = self.format_teardown_prompt(metadata)
             await self.stream_claude_code_sdk_chunks(
                 sid,
                 teardown_prompt,
