@@ -1,11 +1,10 @@
 import asyncio
 import json
 import os
+import tempfile
 import uuid
 from pathlib import Path
-from typing import Optional
 
-import yaml  # type: ignore[import-untyped]
 from claude_code_sdk import (
     ClaudeCodeOptions,
     ClaudeSDKClient,
@@ -18,14 +17,6 @@ from loguru import logger
 from pydantic import Field, ValidationError
 
 from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
-from core.teardown.abstract_storage_adaptor import StorageAdaptorInterface
-from core.teardown.git_repo_processor import RepoProcessor
-from core.teardown.local_storage_client import LocalStorageClient
-from core.teardown.types import (
-    GitHubRepoMetadata,
-    ProcessRepoResultCache,
-    ProcessRepoResultNoCache,
-)
 
 from . import sio
 
@@ -34,9 +25,6 @@ logger = logger.bind(name=__name__)
 
 class ClaudeSDKRequest(AliasedBaseModel):
     query: str = Field(description="The query for Claude SDK")
-    repo_url: Optional[str] = Field(
-        default=None, description="GitHub repository URL for teardown"
-    )
 
 
 DATA_DIR = Path("data")
@@ -45,122 +33,14 @@ DATA_DIR = Path("data")
 class ClaudeSDKActor:
     def __init__(
         self,
-        storage_client: Optional[StorageAdaptorInterface] = None,
         test: bool = False,
     ):
-        self.storage_client = storage_client or LocalStorageClient(data_dir=DATA_DIR)
         self.actor_name = "claude"
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
-        self.repo_processor = RepoProcessor(storage_client=self.storage_client)
         self.operation_timeout = int(
             os.getenv("OPERATION_TIMEOUT", "3600")
         )  # 1 hour default
         self.test = test
-
-    def load_teardown_prompt(self) -> str:
-        """Load teardown prompt from YAML configuration."""
-        prompt_file = Path(__file__).parent.parent / "prompts" / "teardown.yaml"
-        try:
-            with open(prompt_file, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
-                if self.test:
-                    return config["teardown_prompt_test"]
-                return config["teardown_prompt"]
-        except Exception as e:
-            logger.error(f"Failed to load teardown prompt: {e}")
-            return "Please analyze this repository and create a comprehensive teardown."
-
-    def format_teardown_prompt(self, metadata: GitHubRepoMetadata) -> str:
-        """
-        Format the teardown prompt with repository metadata context.
-
-        This enriches the base prompt with key information about the repository
-        to help Claude focus its analysis on the most relevant aspects.
-        """
-        base_prompt = self.load_teardown_prompt()
-
-        # Filter major languages (>10% representation)
-        major_languages = {
-            lang: round(pct, 1)
-            for lang, pct in metadata.language_percentages.items()
-            if pct > 20.0
-        }
-
-        # Format language breakdown for display
-        language_breakdown = (
-            ", ".join(
-                [
-                    f"{lang} ({pct}%)"
-                    for lang, pct in sorted(
-                        major_languages.items(), key=lambda x: x[1], reverse=True
-                    )
-                ]
-            )
-            if major_languages
-            else "Not specified"
-        )
-
-        # Format recent commits (top 3-5)
-        recent_activity_lines = []
-        for commit in metadata.recent_commits[:5]:
-            date = commit.date[:10] if commit.date else "Unknown date"
-            message = (
-                commit.message[:80] + "..."
-                if len(commit.message) > 80
-                else commit.message
-            )
-            recent_activity_lines.append(f"  - {date}: {message} (by {commit.author})")
-
-        recent_activity = (
-            "\n".join(recent_activity_lines)
-            if recent_activity_lines
-            else "  - No recent activity data available"
-        )
-
-        # Build fork context
-        fork_context = ""
-        if metadata.fork and metadata.parent:
-            fork_context = f"\n**Note**: This is a fork of [{metadata.parent.full_name}]({metadata.parent.url}) ({metadata.parent.stargazers_count} stars)"
-
-        # Build topics/tags
-        topics_str = ", ".join(metadata.topics) if metadata.topics else "None"
-
-        # Build license info
-        license_str = (
-            metadata.license.name if metadata.license else "No license specified"
-        )
-
-        # Create the context preamble
-        context = f"""## Repository Context:
-- **Name**: {metadata.full_name}
-- **Description**: {metadata.description or "No description provided"}
-- **URL**: {metadata.url}
-- **Primary Language**: {metadata.primary_language or "Not specified"}
-- **Major Languages (>10% representation)**: {language_breakdown}
-- **Topics/Tags**: {topics_str}
-- **Stars**: {metadata.stargazers_count:,} | **Forks**: {metadata.forks_count:,} | **Open Issues**: {metadata.open_issues_count:,}
-- **Repository Size**: {metadata.size:,} KB
-- **License**: {license_str}
-- **Created**: {metadata.created_at[:10]} | **Last Updated**: {metadata.pushed_at[:10] if metadata.pushed_at else "Unknown"}
-- **Default Branch**: {metadata.default_branch}
-
-### Recent Activity:
-{recent_activity}{fork_context}
-
----
-
-"""
-
-        formatted_prompt = context + base_prompt
-        logger.info(f"Formatted teardown prompt with metadata for {metadata.full_name}")
-        logger.debug(f"Major languages: {major_languages}")
-
-        return formatted_prompt
-
-    def prepare_messages(self, validated_request: ClaudeSDKRequest) -> str:
-        if validated_request.repo_url:
-            return self.load_teardown_prompt()
-        return validated_request.query
 
     def handle_stream_start(self, sid: str, envelope: dict) -> str:
         try:
@@ -187,13 +67,15 @@ class ClaudeSDKActor:
         stream_id = str(uuid.uuid4())
 
         # Check if this is a repo teardown request
-        if validated_envelope.data.repo_url:
+        if validated_envelope.data.query:
+            cwd = Path(tempfile.mkdtemp(dir="tmp"))
             asyncio.create_task(
-                self.handle_repo_teardown(
-                    sid,
-                    validated_envelope.data.repo_url,
-                    validated_envelope.request_id,
-                    stream_id,
+                self.stream_claude_code_sdk_chunks(
+                    sid=sid,
+                    user_query=validated_envelope.data.query,
+                    request_id=validated_envelope.request_id,
+                    stream_id=stream_id,
+                    cwd=cwd,
                 )
             )
         else:
@@ -286,9 +168,9 @@ class ClaudeSDKActor:
         request_id: str,
         stream_id: str,
         cwd: Path,
-        actor="claude",
         model: str = "claude-3-5-sonnet-20241022",
     ) -> None:
+        cwd = cwd or Path.cwd()
         async with ClaudeSDKClient(
             ClaudeCodeOptions(
                 model=model,
@@ -336,166 +218,3 @@ class ClaudeSDKActor:
             envelope_to_send.model_dump_json(),
             to=sid,
         )
-
-    async def stream_analysis(
-        self,
-        sid: str,
-        request_id: str,
-        stream_id: str,
-        analysis_file_path_absolute: Path,
-    ) -> None:
-        """Stream the analysis file."""
-        logger.info(f"Streaming analysis file: {analysis_file_path_absolute}")
-        stream_id = str(uuid.uuid4())
-        # send a stream start
-        envelope_to_send = Envelope(
-            request_id=request_id,
-            stream_id=stream_id,
-            direction="s2c",
-            actor="writer",
-            action="stream",
-            modifier="start",
-            data={
-                "delta": "start",
-            },
-        )
-        await sio.emit(
-            "s2c.writer.stream.start",
-            envelope_to_send.model_dump_json(),
-            to=sid,
-            callback=lambda x: logger.info(f"Stream start sent, received ack: {x}"),
-        )
-        seq = 0
-        with self.storage_client.open_teardown_analysis(
-            analysis_file_path_absolute
-        ) as f:
-            content = f.read()
-
-        def window_stream(content: str, window_size: Optional[int] = None):
-            if window_size is None:
-                window_size = len(content)
-            for i in range(0, len(content), window_size):
-                yield content[i : i + window_size]
-
-        for chunk in window_stream(content):
-            envelope_to_send = Envelope(
-                request_id=request_id,
-                stream_id=stream_id,
-                seq=seq,
-                direction="s2c",
-                actor="writer",
-                action="stream",
-                modifier="chunk",
-                data={
-                    "delta": chunk,
-                },
-            )
-            await sio.emit(
-                "s2c.writer.stream.chunk",
-                envelope_to_send.model_dump_json(),
-                to=sid,
-            )
-            seq += 1
-            await asyncio.sleep(0.01)
-        envelope_to_send = Envelope(
-            request_id=request_id,
-            stream_id=stream_id,
-            seq=1,
-            direction="s2c",
-            actor="writer",
-            action="stream",
-            modifier="end",
-            data={
-                "finish_reason": "stop",
-            },
-        )
-        await sio.emit(
-            "s2c.writer.stream.end",
-            envelope_to_send.model_dump_json(),
-            to=sid,
-        )
-
-    async def stream_repo_metadata(
-        self,
-        sid: str,
-        metadata: GitHubRepoMetadata,
-    ) -> None:
-        logger.info(f"Streaming repository metadata: {metadata}")
-        await sio.emit(
-            "s2c.github.metadata",
-            metadata.model_dump_json(),
-            to=sid,
-        )
-
-    async def handle_repo_teardown(
-        self,
-        sid: str,
-        repo_url: str,
-        request_id: str,
-        stream_id: str,
-    ) -> None:
-        """Handle repository teardown process."""
-        repo_directory = None
-        try:
-            result = self.repo_processor.process_repo_url(repo_url)
-            metadata = result.metadata
-
-            await self.stream_repo_metadata(sid, metadata)
-
-            if isinstance(result, ProcessRepoResultCache):
-                await self.close_claude_stream(sid, request_id, stream_id)
-                analysis_file_path = result.cached_file_path
-                await self.stream_analysis(
-                    sid, request_id, stream_id, analysis_file_path
-                )
-                return
-            elif isinstance(result, ProcessRepoResultNoCache):
-                repo_directory = result.temp_dir.absolute()
-            else:
-                raise ValueError("Invalid result type")
-
-            # Run Claude SDK teardown with formatted prompt including metadata
-            teardown_prompt = self.format_teardown_prompt(metadata)
-            await self.stream_claude_code_sdk_chunks(
-                sid,
-                teardown_prompt,
-                request_id,
-                stream_id,
-                cwd=repo_directory,
-                actor="claude",
-                model=self.model,
-            )
-            await self.close_claude_stream(sid, request_id, stream_id)
-            analysis_file_path_absolute = self.storage_client.save_teardown_analysis(
-                repo_directory, result.metadata
-            )
-            if analysis_file_path_absolute:
-                await self.stream_analysis(
-                    sid, request_id, stream_id, analysis_file_path_absolute
-                )
-
-        except Exception as e:
-            logger.error(f"Error in repo teardown: {e}")
-            # Send error to client
-            envelope_to_send = Envelope(
-                request_id=request_id,
-                stream_id=stream_id,
-                seq=1,
-                direction="s2c",
-                actor="claude",
-                action="stream",
-                modifier="end",
-                data={
-                    "finish_reason": "error",
-                    "error": str(e),
-                },
-            )
-            await sio.emit(
-                "s2c.claude.stream.end",
-                envelope_to_send.model_dump_json(),
-                to=sid,
-            )
-        finally:
-            # Cleanup temp directory
-            if repo_directory:
-                self.repo_processor.cleanup_temp_dir(repo_directory)
