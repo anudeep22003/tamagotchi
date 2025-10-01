@@ -1,6 +1,6 @@
 export const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL ||
-  "https://github-understand-service-75f675b-e6j25jyuza-uc.a.run.app";
+  "http://localhost:8080";
 
 export const POSTHOG_URL =
   import.meta.env.VITE_POSTHOG_URL || "https://us.i.posthog.com";

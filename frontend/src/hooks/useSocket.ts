@@ -4,14 +4,10 @@ import { BACKEND_URL } from "@/constants";
 import { Socket } from "socket.io-client";
 import type { Actor, Envelope } from "@/types/envelopeType";
 import { useMessageStore } from "@/store/useMessageStore";
-import type { GitHubRepoMetadata } from "@/lib/githubMetadataType";
 
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const setGithubMetadata = useMessageStore(
-    (state) => state.setGithubMetadata
-  );
 
   const updateStreamingMessage = useMessageStore(
     (state) => state.updateStreamingMessage
@@ -22,10 +18,6 @@ export const useSocket = () => {
 
   const createStreamMessage = useMessageStore(
     (state) => state.createStreamMessage
-  );
-
-  const setAnalysisError = useMessageStore(
-    (state) => state.setAnalysisError
   );
 
   const onStreamChunk = useCallback(
@@ -124,30 +116,16 @@ export const useSocket = () => {
 
     socket.on("s2c.claude.stream.end", (rawMessage: string) => {
       try {
-        const envelope = JSON.parse(rawMessage);
-        
-        // Check if this is an error
-        if (envelope.data?.finish_reason === "error" && envelope.data?.error) {
-          const errorMessage = envelope.data.error;
-          
-          // Parse repository size errors
-          const sizeMatch = errorMessage.match(/Repository too large: ([\d.]+)MB/);
-          if (sizeMatch) {
-            setAnalysisError({
-              message: "Repository Too Large",
-              details: `The repository is ${sizeMatch[1]}MB, which exceeds the current limit of ~100MB. Please try with a smaller repository.`
-            });
-          } else {
-            setAnalysisError({
-              message: "Analysis Error",
-              details: errorMessage
-            });
-          }
-        }
+        const parsed_message = JSON.parse(rawMessage);
+        console.log("claude stream end", parsed_message);
       } catch (error) {
-        console.error("Error parsing claude stream end:", error, rawMessage);
+        console.error(
+          "Error parsing claude stream end:",
+          error,
+          rawMessage
+        );
       }
-      
+
       onStreamEnd("claude");
     });
 
@@ -194,32 +172,12 @@ export const useSocket = () => {
       }
     );
 
-    socket.on("s2c.github.metadata", (rawMessage: string) => {
-      try {
-        const data: GitHubRepoMetadata = JSON.parse(rawMessage);
-        console.log("github metadata", data);
-        setGithubMetadata(data);
-      } catch (error) {
-        console.error(
-          "Error parsing github metadata:",
-          error,
-          rawMessage
-        );
-      }
-    });
-
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
     };
-  }, [
-    onStreamChunk,
-    onStreamEnd,
-    createStreamMessage,
-    setGithubMetadata,
-    setAnalysisError,
-  ]);
+  }, [onStreamChunk, onStreamEnd, createStreamMessage]);
 
   return {
     isConnected,

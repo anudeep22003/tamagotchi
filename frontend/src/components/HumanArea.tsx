@@ -3,15 +3,10 @@ import { useEffect, useRef, useMemo, useCallback } from "react";
 import { MessageInput } from "./MessageInput";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
-const GitHubHeader = () => {
+const HumaAreaHeader = () => {
   return (
     <div className="p-4 border-b border-border">
-      <h2 className="text-lg font-medium">
-        🔍 GitHub Repository Teardown
-      </h2>
-      <p className="text-sm text-muted-foreground mt-1">
-        Analyze any public GitHub repository
-      </p>
+      <h2 className="text-lg font-medium">🔍 Human-AI Workspace</h2>
     </div>
   );
 };
@@ -71,7 +66,7 @@ const MessageList = () => {
 export const HumanArea = () => {
   return (
     <div className="flex flex-col h-full bg-background border-r border-border">
-      <GitHubHeader />
+      <HumaAreaHeader />
       <MessageList />
       <div className="p-4 border-t border-border">
         <MessageInput />
