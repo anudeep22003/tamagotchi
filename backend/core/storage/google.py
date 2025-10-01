@@ -25,10 +25,10 @@ class StorageBucketClient:
         logger.debug(f"Initializing StorageClient for bucket: {self.bucket_name}")
         self.bucket = self.client.bucket(self.bucket_name)
         logger.info(f"Initialized StorageClient for bucket: {self.bucket_name}")
-    
+
     def create_folder(self, blob_prefix: str) -> None:
         """Create a folder in the storage bucket.
-        
+
         Args:
             blob_prefix: Prefix for the folder in the bucket
         """
