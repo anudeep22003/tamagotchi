@@ -1,75 +1,72 @@
-# Personal App Store
+# GitHub Repository Understand
 
-> GPT-5 can spin up apps in a single shot — but most end up buried in chat threads, unused. I'm building the personal app store for individuals.
+> A sophisticated AI-powered tool for understanding the structure and architecture of GitHub repositories. Peek under the hood of what world-class programmers build and understand why certain technical decisions were made.
 
 ## The Vision
 
-Imagine having your own curated collection of AI-powered apps, each tailored to work with your personal data. Instead of losing brilliant GPT-5 creations in chat history, you can build, configure, and launch them on demand — creating a truly personal digital ecosystem.
+Understanding complex codebases is a challenge for developers at every level. This tool analyzes GitHub repositories and generates comprehensive teardowns that explain the core data structures, architectural patterns, and relationships between components — helping you learn from the best codebases and ace technical interviews.
 
 ## How It Works
 
-This project consists of two powerful components:
+This tool provides an intuitive interface for deep repository analysis:
 
-### 🚀 **App Creation & Launch**
-Build applications with GPT-5 and advanced reasoning support, then configure them to run whenever you need them. The system uses a dual-pane interface where you collaborate with AI in real-time:
-- **Human Area** (left): Your input, requirements, and iterations with markdown rendering
-- **Generative Area** (right): AI-powered app construction with syntax highlighting
-- **Envelope-based protocol**: Typed websocket communication with acknowledgments and streaming
+### 🔍 **Repository Analysis**
+Enter any public GitHub repository URL and get comprehensive analysis powered by Claude Code SDK:
+- **Intelligent validation**: Checks URL format, repository accessibility, and public status
+- **Smart caching**: Uses commit SHA-based caching to avoid re-analyzing unchanged repositories
+- **Size optimization**: Filters out overly large repositories to ensure efficient processing
+- **Real-time feedback**: Live streaming of analysis progress and insights
 
-### 📊 **Personal Data Repository**
-A Chrome extension that intelligently captures your digital footprint into your own private data vault:
-- **Smart extraction**: Captures content like saved tweets, posts, and interactions
-- **DOM parsing**: Reads structured data directly from web pages with user permission
-- **API interception**: Legitimately accesses API responses without triggering scraping protections
-- **Multi-platform ready**: Designed with adapters for Twitter, LinkedIn, and other platforms
+### 📋 **Comprehensive Teardowns**
+Generate detailed markdown reports that include:
+- **Data Structure Analysis**: Identify core data structures and their relationships
+- **Architectural Patterns**: Understand design decisions and architectural choices
+- **Function & Class Mapping**: Visualize how components interact and depend on each other
+- **Mermaid Diagrams**: UML, sequence, and class diagrams for visual understanding
+- **Module Dependencies**: Clear mapping of how different parts of the codebase connect
 
 ## Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│     Frontend    │    │     Backend      │    │   Chrome Ext    │
-│   (React/Vite)  │◄──►│  (FastAPI/Socket)│◄──►│  (React/CRXJS)  │
+│     Frontend    │    │     Backend      │    │   GitHub API    │
+│   (React/Vite)  │◄──►│  (FastAPI/Socket)│◄──►│   Integration   │
 │                 │    │                  │    │                 │
-│ • Message Store │    │ • Envelope Protocol│   │ • DOM capture   │
-│ • Markdown UI   │    │ • Stream handling│    │ • Data parsing  │
-│ • Code preview  │    │ • GPT-5 integration│  │ • API intercept │
+│ • Repo Input    │    │ • Claude Code SDK│    │ • Repo metadata │
+│ • Live Analysis │    │ • Git operations │    │ • Access validation│
+│ • Markdown UI   │    │ • Teardown engine│    │ • Rate limiting │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
 ## Key Features
 
-- **Envelope Protocol**: Structured websocket communication with request/response correlation
-- **Stream Management**: Server-minted stream IDs with sequential message ordering
-- **State Management**: Zustand-based message store with type-safe message handling
-- **Rich UI**: Markdown rendering with syntax highlighting for code blocks
-- **Real-time Streaming**: Chunked message delivery with acknowledgment system
-- **Modular Architecture**: Separated concerns for chat, code generation, and data handling
+- **Claude Code SDK Integration**: Leverages Claude's advanced code understanding capabilities
+- **Smart Repository Processing**: Intelligent cloning, validation, and size management
+- **Real-time Analysis Streaming**: Live progress updates during repository analysis
+- **Comprehensive Caching**: SHA-based caching prevents redundant analysis of unchanged repos
+- **Rich Markdown Output**: Detailed teardowns with syntax highlighting and Mermaid diagrams
+- **GitHub API Integration**: Seamless repository metadata fetching and validation
 
 ## Tech Stack
 
 ### Backend (`/backend`)
-- **FastAPI**: High-performance API framework
-- **Socket.IO**: Envelope-based websocket protocol
-- **OpenAI GPT-5**: Advanced reasoning and app generation
-- **Pydantic**: Type-safe envelope and message validation
-- **Python 3.12+**: Modern Python with full typing
+- **FastAPI**: High-performance API framework with async support
+- **Claude Code SDK**: AI-powered code analysis and understanding
+- **Socket.IO**: Real-time streaming communication protocol
+- **GitPython**: Git repository cloning and management
+- **PyGithub**: GitHub API integration for repository metadata
+- **Pydantic**: Type-safe data validation and serialization
+- **Python 3.12+**: Modern Python with full typing support
 
 ### Frontend (`/frontend`)
-- **React 19**: Latest React with concurrent features
-- **Socket.IO Client**: Typed envelope communication
-- **Shadcn/UI**: Beautiful, accessible components
-- **TailwindCSS**: Utility-first styling
-- **React Router**: Multi-app navigation
-- **Zustand**: Centralized message store
-- **React Markdown**: Rich text rendering with GFM support
-- **Syntax Highlighter**: Code highlighting for multiple languages
-
-### Chrome Extension (`/extension`)
-- **Manifest V3**: Latest Chrome extension standard
-- **React + TypeScript**: Type-safe component development
-- **CRXJS/Vite**: Modern build tooling
-- **DOMPurify**: Safe HTML sanitization
-- **Chrome APIs**: Native browser integration
+- **React 19**: Latest React with concurrent features and streaming support
+- **Socket.IO Client**: Real-time communication with the analysis backend
+- **Shadcn/UI**: Beautiful, accessible UI components
+- **TailwindCSS**: Utility-first styling with dark theme optimization
+- **React Router**: Single-page application routing
+- **Zustand**: Centralized state management for analysis progress
+- **React Markdown**: Rich markdown rendering with Mermaid diagram support
+- **React Syntax Highlighter**: Code syntax highlighting for multiple languages
 
 ## Getting Started
 
@@ -77,14 +74,15 @@ A Chrome extension that intelligently captures your digital footprint into your 
 - Node.js 18+
 - Python 3.12+
 - Bun (preferred) or npm
-- Chrome browser for extension development
+- GitHub Personal Access Token
+- Anthropic API Key (for Claude Code SDK)
 
 ### Quick Setup
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd tamagotchi
+   cd github-repo-understand
    ```
 
 2. **Backend setup**
@@ -94,7 +92,10 @@ A Chrome extension that intelligently captures your digital footprint into your 
    uv sync
    # Set up environment
    cp .env.example .env.local
-   # Add your OPENAI_API_KEY to .env.local
+   # Add your API keys to .env.local:
+   # ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   # GITHUB_TOKEN=your_github_token_here
+   # BUCKET_NAME=your_storage_bucket_name
    # Start the server
    uv run uvicorn main:app --reload --port 8085
    ```
@@ -106,88 +107,89 @@ A Chrome extension that intelligently captures your digital footprint into your 
    bun run dev
    ```
 
-4. **Extension setup**
-   ```bash
-   cd extension
-   bun install
-   bun run build
-   # Load the dist/ folder as an unpacked extension in Chrome
-   ```
 
 ### Environment Variables
 
 Create `.env.local` in the backend directory:
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GITHUB_TOKEN=your_github_personal_access_token
+BUCKET_NAME=your_storage_bucket_name
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+TEMP_DIR=/tmp/repo-analysis
+OPERATION_TIMEOUT=3600
 ```
 
 ## Usage Examples
 
-### Building Your First App
+### Analyzing a Repository
 1. Open the frontend at `http://localhost:5173`
-2. Navigate to the Human-AI Workspace
-3. Describe your app idea in the left pane
-4. Watch GPT-5 build it live in the right pane
-5. Iterate and refine until perfect
-6. Launch your app from the app store interface
+2. Enter a public GitHub repository URL in the input field
+3. Wait for validation (green checkmark indicates valid repo)
+4. Click "Analyze Repository" to start the teardown process
+5. Watch the real-time analysis progress in the right panel
+6. Review the comprehensive markdown teardown when complete
 
-### Capturing Twitter Data
-1. Install the Chrome extension
-2. Visit Twitter and grant permissions
-3. The extension automatically captures your interactions
-4. Data appears in your personal repository
-5. Build apps that use this data immediately
+### Understanding Complex Codebases
+1. Try analyzing popular open-source projects like:
+   - `facebook/react` - Learn React's internal architecture
+   - `microsoft/vscode` - Understand VS Code's extensible design
+   - `kubernetes/kubernetes` - Explore large-scale system architecture
+2. Focus on the generated Mermaid diagrams to visualize relationships
+3. Use the data structure analysis to understand core abstractions
+4. Review the architectural decisions section for design insights
 
-### Chatting with Your Data
-1. Use the Twitter Data Chat page
-2. Ask questions about your tweets, engagement, followers
-3. Get insights powered by your actual social media data
-4. Build custom analytics apps based on these insights
+### Preparing for Technical Interviews
+1. Analyze repositories similar to your target company's tech stack
+2. Study the teardown's architectural patterns section
+3. Review the component interaction diagrams
+4. Practice explaining the codebase structure using the generated insights
 
-## WebSocket Protocol
+## Analysis Features
 
-The system uses an envelope-based protocol for all websocket communication:
+The generated teardowns include comprehensive analysis of:
 
-### Message Flow
-1. Client sends `c2s.{actor}.stream.start` with request envelope
-2. Server validates and acknowledges with stream ID
-3. Server streams `s2c.{actor}.stream.chunk` messages
-4. Server completes with `s2c.{actor}.stream.end`
+### Code Structure Analysis
+- **Data Structures**: Core classes, interfaces, and type definitions
+- **Function Mapping**: Key functions and their relationships
+- **Module Dependencies**: How different parts of the codebase connect
+- **Design Patterns**: Identification of common architectural patterns
 
-### Envelope Structure
-- **Protocol version**: v1
-- **Correlation IDs**: request_id, stream_id, sequence number
-- **Message routing**: direction, actor, action, modifier
-- **Type safety**: Full validation on both ends
+### Visual Diagrams
+- **Class Diagrams**: UML representation of class hierarchies
+- **Sequence Diagrams**: Flow of operations and method calls
+- **Dependency Graphs**: Module and component relationships
+- **Architecture Overview**: High-level system structure
 
 ## Development
 
 The project follows modern development practices:
-- **Type Safety**: Full TypeScript/Python typing with envelope validation
-- **Component Architecture**: Reusable, composable components
-- **State Management**: Centralized Zustand store with typed messages
+- **Type Safety**: Full TypeScript/Python typing with Pydantic validation
+- **Modular Architecture**: Clean separation between analysis, storage, and UI
+- **Real-time Communication**: Streaming updates during repository analysis
 - **Modern Tooling**: Vite, Bun, UV for fast development
-- **Performance**: Memoized rendering, optimized message handling
+- **Intelligent Caching**: SHA-based caching to avoid redundant analysis
 
-### Adding New Data Sources
-1. Create adapter in extension (`/extension/src/config/`)
-2. Add parser for data structure
-3. Update backend ingestion (`/backend/core/api/ingestion.py`)
-4. Build apps that use the new data source
+### Contributing to Analysis Quality
+1. Enhance the teardown prompts in `claude_sdk_actor.py`
+2. Add new analysis patterns for different programming languages
+3. Improve Mermaid diagram generation for better visualization
+4. Extend the repository metadata collection in `git_repo_processor.py`
 
 ## The Future
 
 This is just the beginning. The vision includes:
-- **Multi-platform adapters**: LinkedIn, GitHub, email, calendar integration
-- **App marketplace**: Share and discover community-built apps
-- **Advanced AI agents**: Apps that proactively work with your data
-- **Cross-device sync**: Access your apps and data anywhere
-- **Workflow automation**: Chain apps together for complex tasks
+- **Language-Specific Analysis**: Tailored teardowns for Go, Rust, Java, and other languages
+- **Interactive Diagrams**: Clickable Mermaid diagrams with code navigation
+- **Comparative Analysis**: Side-by-side comparison of similar repositories
+- **Team Knowledge Sharing**: Collaborative features for sharing insights
+- **IDE Integration**: VS Code extension for in-editor repository insights
+- **Historical Analysis**: Track how repository architecture evolves over time
 
 ## Contributing
 
-This project represents a new paradigm in personal computing. If you're interested in building the future of personal AI applications, contributions are welcome!
+This project aims to democratize understanding of complex codebases. If you're interested in helping developers learn from world-class code architecture, contributions are welcome!
 
 ---
 
-*Built for the hackathon that believes in empowering individuals with their own AI-powered app ecosystems.*
+*Built to help developers understand the structure and genius behind world-class codebases.*

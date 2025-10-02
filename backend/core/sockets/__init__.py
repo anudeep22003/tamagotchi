@@ -25,10 +25,7 @@ def register_sio_handlers() -> None:
     from . import (
         chat,  # noqa: F401
         claude,  # noqa: F401
-        code,  # noqa: F401
-        commit,  # noqa: F401
         setup,  # noqa: F401
-        writer,  # noqa: F401
     )
 
     logger.info("Socket handlers registered successfully")

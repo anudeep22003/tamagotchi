@@ -19,6 +19,7 @@ export type MessageType = "human" | Actor;
 
 export type TypedMessage = BaseMessage;
 
+
 export interface MessageState {
   allMessages: TypedMessage[];
   activeTab: Actor | null;
@@ -37,6 +38,7 @@ export interface MessageState {
   setActiveTab: (actor: Actor, isManual?: boolean) => void;
   addStreamingActor: (actor: Actor) => void;
   removeStreamingActor: (actor: Actor) => void;
+  clearAllState: () => void;
 }
 
 export const useMessageStore = create<MessageState>()(
@@ -46,6 +48,8 @@ export const useMessageStore = create<MessageState>()(
       activeTab: null,
       isTabManuallySelected: false,
       streamingActors: new Set(),
+      githubMetadata: null,
+      analysisError: null,
       addMessage: (message) =>
         set((state) => ({
           allMessages: [...state.allMessages, message],
@@ -68,9 +72,15 @@ export const useMessageStore = create<MessageState>()(
             newStreamingActors.add(actor);
           }
 
+          // Auto-switch to streaming actor if user hasn't manually selected a tab
+          const shouldAutoSwitch =
+            !state.isTabManuallySelected && type !== "human";
+
           return {
             allMessages: [...state.allMessages, newMessage],
             streamingActors: newStreamingActors,
+            // Only update activeTab if we should auto-switch
+            ...(shouldAutoSwitch && { activeTab: actor }),
           };
         });
       },
@@ -128,6 +138,14 @@ export const useMessageStore = create<MessageState>()(
           newStreamingActors.delete(actor);
           return { streamingActors: newStreamingActors };
         });
+      },
+      clearAllState: () => {
+        set(() => ({
+          allMessages: [],
+          activeTab: null,
+          isTabManuallySelected: false,
+          streamingActors: new Set(),
+        }));
       },
     }),
 

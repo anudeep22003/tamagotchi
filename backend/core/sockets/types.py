@@ -1,8 +1,7 @@
 from typing import Literal, cast
 
 from openai.types.chat import ChatCompletionMessageParam
-from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_camel
+from pydantic import BaseModel
 
 
 class Message(BaseModel):
@@ -25,42 +24,3 @@ class Message(BaseModel):
             return cast(
                 ChatCompletionMessageParam, {"role": self.role, "content": self.content}
             )
-
-
-class ChatRequest(BaseModel):
-    messages: list[Message]
-
-
-class ChoiceDelta(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    content: str | None = None
-    role: str | None = None
-
-
-class Choice(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    index: int
-    delta: ChoiceDelta
-    finish_reason: str | None = None
-
-
-class StreamingResponse(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    id: str
-    object: str = "chat.completion.chunk"
-    created: int
-    model: str
-    choices: list[Choice]
-    # content_type: Literal["generative"] = "generative"
-
-
-class SimpleResponse(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    id: str
-    type: Literal["generative"]
-    content: str
-    timestamp: int

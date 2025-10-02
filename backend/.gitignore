@@ -57,9 +57,8 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
-# Storage
-storage/
-
 # Misc
 CLAUDE.md
 .claude/
+scratch.py
+.env*

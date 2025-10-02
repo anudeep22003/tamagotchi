@@ -16,6 +16,10 @@ export const useSocket = () => {
     (state) => state.removeStreamingActor
   );
 
+  const createStreamMessage = useMessageStore(
+    (state) => state.createStreamMessage
+  );
+
   const onStreamChunk = useCallback(
     (envelope: Envelope<{ delta: string }>) => {
       updateStreamingMessage(envelope);
@@ -110,16 +114,70 @@ export const useSocket = () => {
       onStreamEnd("writer");
     });
 
-    socket.on("s2c.claude.stream.end", () => {
+    socket.on("s2c.claude.stream.end", (rawMessage: string) => {
+      try {
+        const parsed_message = JSON.parse(rawMessage);
+        console.log("claude stream end", parsed_message);
+      } catch (error) {
+        console.error(
+          "Error parsing claude stream end:",
+          error,
+          rawMessage
+        );
+      }
+
       onStreamEnd("claude");
     });
+
+    // when server starts
+    socket.on(
+      "s2c.writer.stream.start",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (rawMessage: string, callback: (response: any) => void) => {
+        try {
+          const parsed_envelope: Envelope<{
+            delta: "start";
+          }> = JSON.parse(rawMessage);
+
+          if (!parsed_envelope.streamId || !parsed_envelope.requestId) {
+            throw new Error(
+              `Stream ID ${parsed_envelope.streamId} or request ID ${parsed_envelope.requestId} is missing`
+            );
+          }
+
+          createStreamMessage(
+            parsed_envelope.streamId,
+            parsed_envelope.requestId,
+            "writer"
+          );
+          console.log("created stream message", parsed_envelope);
+
+          // ✅ Send acknowledgement using the callback
+          callback({
+            ok: true,
+            streamId: parsed_envelope.streamId,
+            requestId: parsed_envelope.requestId,
+          });
+        } catch (error) {
+          console.error(
+            "Error parsing stream start:",
+            error,
+            rawMessage
+          );
+          callback({
+            ok: false,
+            error: "Failed to parse stream start",
+          });
+        }
+      }
+    );
 
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
     };
-  }, [onStreamChunk, onStreamEnd]);
+  }, [onStreamChunk, onStreamEnd, createStreamMessage]);
 
   return {
     isConnected,

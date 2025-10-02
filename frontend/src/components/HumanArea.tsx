@@ -1,14 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { useAppContext } from "@/context/AppContext";
 import { useHumanAreaMessages } from "@/store/useMessageStore";
 import { useEffect, useRef, useMemo, useCallback } from "react";
 import { MessageInput } from "./MessageInput";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
-const ConversationHeader = () => {
+const HumaAreaHeader = () => {
   return (
     <div className="p-4 border-b border-border">
-      <h2 className="text-lg font-medium">Conversation</h2>
+      <h2 className="text-lg font-medium">🔍 Human-AI Workspace</h2>
     </div>
   );
 };
@@ -65,60 +63,13 @@ const MessageList = () => {
   );
 };
 
-const RecordingControls = () => {
-  const {
-    showGenerative,
-    setShowGenerative,
-    handleCodeSendClick,
-    handleWriterSendClick,
-    handleClaudeSendClick,
-  } = useAppContext();
-
-  const handleToggleGenerative = () => {
-    setShowGenerative(!showGenerative);
-  };
-
-  return (
-    <div className="flex gap-2 justify-between">
-      <Button variant="outline" size="sm" onClick={handleCodeSendClick}>
-        Code
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleClaudeSendClick}
-      >
-        Claude
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleWriterSendClick}
-      >
-        {"Write >"}
-      </Button>
-      <div className="md:hidden flex-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleToggleGenerative}
-          className="w-full"
-        >
-          {showGenerative ? "← Conversation" : "View Output →"}
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 export const HumanArea = () => {
   return (
     <div className="flex flex-col h-full bg-background border-r border-border">
-      <ConversationHeader />
+      <HumaAreaHeader />
       <MessageList />
       <div className="p-4 border-t border-border">
         <MessageInput />
-        <RecordingControls />
       </div>
     </div>
   );

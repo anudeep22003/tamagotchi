@@ -31,3 +31,7 @@ dist-ssr
 
 # Environment variables
 .env
+
+# Vite
+.vite
+.env.local

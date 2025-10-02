@@ -12,19 +12,28 @@ interface MarkdownRendererProps {
   onContentLoad?: () => void;
 }
 
-mermaid.initialize({
-  startOnLoad: true,
-  theme: "dark",
-  themeVariables: {
-    primaryColor: "#1e293b",
-    primaryTextColor: "#e2e8f0",
-    primaryBorderColor: "#475569",
-    lineColor: "#475569",
-    secondaryColor: "#334155",
-    tertiaryColor: "#1e293b",
-    background: "#0f172a",
-  },
-});
+// Initialize Mermaid once when the module loads
+let mermaidInitialized = false;
+
+const initializeMermaid = () => {
+  if (!mermaidInitialized) {
+    mermaid.initialize({
+      startOnLoad: false, // We'll manually trigger rendering
+      theme: "dark",
+      themeVariables: {
+        primaryColor: "#1e293b",
+        primaryTextColor: "#e2e8f0",
+        primaryBorderColor: "#475569",
+        lineColor: "#475569",
+        secondaryColor: "#334155",
+        tertiaryColor: "#1e293b",
+        background: "#0f172a",
+      },
+      securityLevel: "loose", // Allow more diagram types
+    });
+    mermaidInitialized = true;
+  }
+};
 
 const LinkPreview = ({
   href,
@@ -67,19 +76,86 @@ const MermaidDiagram = ({
   onLoad?: () => void;
 }) => {
   const [svg, setSvg] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
   const mermaidId = useMemo(
-    () => `mermaid-${Date.now()}-${Math.random()}`,
+    () =>
+      `mermaid-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
     []
   );
 
+  // Function to detect if SVG is an error state
+  const isErrorSvg = (svgContent: string): boolean => {
+    return (
+      svgContent.includes('aria-roledescription="error"') ||
+      svgContent.includes('class="error-icon"') ||
+      svgContent.includes('class="error-text"') ||
+      svgContent.includes("Syntax error in text") ||
+      svgContent.includes("Error:")
+    );
+  };
+
+  // Function to extract error message from SVG
+  const extractErrorMessage = (svgContent: string): string => {
+    // Try to extract error text from the SVG
+    const errorTextMatch = svgContent.match(
+      /<text[^>]*class="error-text"[^>]*>([^<]+)<\/text>/
+    );
+    if (errorTextMatch) {
+      return errorTextMatch[1];
+    }
+
+    // Fallback: look for any text that might be an error
+    const textMatches = svgContent.match(
+      /<text[^>]*>([^<]*error[^<]*)<\/text>/i
+    );
+    if (textMatches) {
+      return textMatches[1];
+    }
+
+    return "Mermaid diagram syntax error";
+  };
+
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
+    setError("");
 
     const renderDiagram = async () => {
       try {
+        // Ensure Mermaid is initialized
+        initializeMermaid();
+
+        // Validate the mermaid code
+        if (!code || code.trim().length === 0) {
+          throw new Error("Empty mermaid code");
+        }
+
+        console.log("Rendering mermaid diagram with ID:", mermaidId);
+        console.log("Mermaid code:", code);
+
         const { svg } = await mermaid.render(mermaidId, code);
+
         if (isMounted) {
+          // Check if the rendered SVG is an error state
+          if (isErrorSvg(svg)) {
+            const errorMessage = extractErrorMessage(svg);
+            setError(errorMessage);
+            setIsLoading(false);
+            console.warn(
+              "Mermaid diagram rendered as error SVG:",
+              errorMessage
+            );
+            return;
+          }
+
           setSvg(svg);
+          setIsLoading(false);
+          console.log("Mermaid diagram rendered successfully");
+
           // Trigger scroll update after diagram is rendered
           setTimeout(() => {
             onLoad?.();
@@ -87,8 +163,17 @@ const MermaidDiagram = ({
         }
       } catch (error) {
         console.error("Failed to render mermaid diagram:", error);
+        if (isMounted) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to render diagram"
+          );
+          setIsLoading(false);
+        }
       }
     };
+
     renderDiagram();
 
     return () => {
@@ -101,15 +186,45 @@ const MermaidDiagram = ({
     };
   }, [code, mermaidId, onLoad]);
 
-  if (!svg)
+  if (isLoading) {
     return (
-      <div className="text-muted-foreground">Loading diagram...</div>
+      <div className="flex items-center justify-center p-4 text-muted-foreground">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+        Loading diagram...
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="text-red-600 dark:text-red-400 text-sm font-medium mb-2">
+          Diagram Error
+        </div>
+        <div className="text-red-500 dark:text-red-300 text-xs">
+          {error}
+        </div>
+        <details className="mt-2">
+          <summary className="text-xs text-red-400 cursor-pointer">
+            Show code
+          </summary>
+          <pre className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs overflow-x-auto">
+            {code}
+          </pre>
+        </details>
+      </div>
+    );
+  }
 
   return (
     <div
       dangerouslySetInnerHTML={{ __html: svg }}
-      className="mermaid-container"
+      className="mermaid-container my-4"
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
     />
   );
 };
@@ -120,6 +235,11 @@ export const MarkdownRenderer = ({
   onContentLoad,
 }: MarkdownRendererProps) => {
   const processedContent = content || "";
+
+  // Initialize Mermaid when component mounts
+  useEffect(() => {
+    initializeMermaid();
+  }, []);
 
   const isIncompleteCodeBlock = (text: string) => {
     const codeBlockStarts = (text.match(/```/g) || []).length;
@@ -145,7 +265,7 @@ export const MarkdownRenderer = ({
 
       if (isCodeBlock && language) {
         return (
-          <div className="relative group my-3">
+          <div className="relative group my-3 overflow-hidden">
             <SyntaxHighlighter
               style={vscDarkPlus}
               language={language}
@@ -156,7 +276,10 @@ export const MarkdownRenderer = ({
                 fontSize: "0.875rem",
                 padding: "1rem",
                 backgroundColor: "#1e1e1e",
+                overflowX: "auto",
+                maxWidth: "100%",
               }}
+              wrapLongLines={false}
             >
               {codeString}
             </SyntaxHighlighter>

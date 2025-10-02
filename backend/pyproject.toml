@@ -5,7 +5,7 @@ description = "Tamagotchi backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "claude-code-sdk>=0.0.20",
+    "claude-code-sdk",
     "click>=8.2.1",
     "dotenv>=0.9.9",
     "fastapi>=0.116.1",
@@ -14,11 +14,17 @@ dependencies = [
     "openai>=1.99.6",
     "pydantic>=2.11.7",
     "python-socketio>=5.13.0",
+    "pyyaml>=6.0.2",
     "uvicorn>=0.27.0",
+    "pulumi>=3.0.0,<4.0.0",
+    "pulumi-gcp>=8.0.0,<9.0.0",
+    "google-cloud-storage>=3.4.0",
+    "pygithub>=2.8.1",
+    "gitpython>=3.1.45",
 ]
 
 [dependency-groups]
-dev = ["mypy>=1.17.1", "ruff>=0.12.8"]
+dev = ["mypy>=1.17.1", "ruff>=0.12.8", "types-pyyaml>=6.0.12.20250822"]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -49,6 +55,7 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "data",
 ]
 
 # Same as Black.
@@ -56,7 +63,7 @@ line-length = 88
 indent-width = 4
 
 # Assume Python 3.9
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
@@ -98,3 +105,6 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.uv.sources]
+claude-code-sdk = { git = "https://github.com/anthropics/claude-code-sdk-python.git" }
