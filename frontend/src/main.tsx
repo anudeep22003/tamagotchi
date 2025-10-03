@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { PostHogProvider } from "posthog-js/react";
 import { POSTHOG_KEY, POSTHOG_URL, MODE } from "./constants";
+import "@/lib/logger"; // Initialize logger
 import App from "./App";
 
 createRoot(document.getElementById("root")!).render(
