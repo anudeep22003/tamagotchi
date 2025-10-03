@@ -15,10 +15,10 @@ export const MessageInput = () => {
 
   const handleRecordClick = useCallback(async () => {
     if (isRecording) {
-      mediaManager?.releaseAudioStream();
+      await mediaManager?.stopRecording();
       setIsRecording(false);
     } else {
-      mediaManager?.getAudioStream();
+      await mediaManager?.startRecording();
       setIsRecording(true);
     }
   }, [mediaManager, isRecording]);

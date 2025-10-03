@@ -1,19 +1,13 @@
 import { MediaManager } from "@/media";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 
 const useAudio = () => {
-  const mediaManagerRef = useRef<MediaManager | null>(null);
-
-    useEffect(() => {
-      mediaManagerRef.current = new MediaManager();
-
-      return () => {
-        mediaManagerRef.current?.releaseAudioStream();
-      };
-    }, []);
+  const mediaManagerRef = useRef<MediaManager>(new MediaManager());
 
   return {
     mediaManager: mediaManagerRef.current,
+    startRecording: () => mediaManagerRef.current.startRecording(),
+    stopRecording: () => mediaManagerRef.current.stopRecording(),
   };
 };
 
