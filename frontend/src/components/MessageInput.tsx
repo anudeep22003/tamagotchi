@@ -1,11 +1,27 @@
 import { useAppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
+import { MicIcon } from "lucide-react";
 
 export const MessageInput = () => {
-  const { inputText, setInputText, handleInputSendClick } =
-    useAppContext();
+  const {
+    inputText,
+    setInputText,
+    handleInputSendClick,
+    mediaManager,
+  } = useAppContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const handleRecordClick = useCallback(async () => {
+    if (isRecording) {
+      mediaManager?.releaseAudioStream();
+      setIsRecording(false);
+    } else {
+      mediaManager?.getAudioStream();
+      setIsRecording(true);
+    }
+  }, [mediaManager, isRecording]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -62,6 +78,10 @@ export const MessageInput = () => {
           size="sm"
         >
           Send
+        </Button>
+        <Button onClick={handleRecordClick} size="sm">
+          <MicIcon className="w-4 h-4" />{" "}
+          {isRecording ? "Stop" : "Record"}
         </Button>
       </div>
     </div>

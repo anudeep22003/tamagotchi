@@ -18,6 +18,8 @@ import {
   sendCodeMessage,
   sendWriterMessage,
 } from "@/lib/messageSendHandlers";
+import type { MediaManager } from "@/media";
+import useAudio from "@/hooks/useAudio";
 
 interface AppContextType {
   inputText: string;
@@ -31,6 +33,7 @@ interface AppContextType {
   isConnected: boolean;
   emit: (event: string, data?: unknown) => void;
   socket: Socket | null;
+  mediaManager: MediaManager | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -38,7 +41,7 @@ const AppContext = createContext<AppContextType | null>(null);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [inputText, setInputText] = useState("");
   const [showGenerative, setShowGenerative] = useState(false);
-
+  const { mediaManager } = useAudio();
   // Get store functions
   const createStreamMessage = useMessageStore(
     (state) => state.createStreamMessage
@@ -113,6 +116,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isConnected,
         emit,
         socket,
+        mediaManager,
       }}
     >
       {children}
