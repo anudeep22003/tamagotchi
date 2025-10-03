@@ -1,3 +1,4 @@
+import { mediaLogger } from "@/lib/logger";
 const MIME_TYPE = "audio/webm";
 
 export class MediaManager {
@@ -23,7 +24,7 @@ export class MediaManager {
       this.activeStream = stream;
       return stream;
     } catch (error) {
-      console.error("Error getting audio permission:", error);
+      mediaLogger.error("Error getting audio permission", error);
       return null;
     }
   }
@@ -42,56 +43,61 @@ export class MediaManager {
     if (stream) {
       stream.getTracks().forEach((track) => {
         track.stop();
-        console.log("Audio track stopped:", track.kind);
+        mediaLogger.info("Audio track stopped", { track: track.kind });
       });
       this.activeStream = null;
     }
   }
 
   async startRecording(): Promise<void> {
-    console.log("start recording");
-    console.log("getting the stream");
+    mediaLogger.debug("start recording clicked, current config", {
+      stream: this.activeStream,
+      recorder: this.activeRecorder,
+    });
     const stream = await this.getAudioStream();
     if (!stream) throw new Error("Failed to get audio stream");
-    console.log("got the stream");
-    console.log("creating the recorder");
     const recorder = new MediaRecorder(stream, {
       mimeType: MIME_TYPE,
     });
-    console.log("created the recorder");
     this.activeRecorder = recorder;
-    console.log("attaching event listeners");
+    mediaLogger.debug("attaching event listeners");
     recorder.onstart = () => {
-      console.log("start event fired");
+      mediaLogger.debug("start event fired");
     };
     recorder.onstop = () => {
-      console.log("stop event fired");
+      mediaLogger.debug("stop event fired");
     };
     recorder.onerror = (event) => {
-      console.error("error event fired", event);
+      mediaLogger.error("error event fired", { event });
     };
     recorder.ondataavailable = (event) => {
-      console.log("data available event fired", event);
+      mediaLogger.debug("data available event fired", { event });
     };
-    console.log("starting the recorder");
+    mediaLogger.debug("starting the recorder, current config", {
+      stream: this.activeStream,
+      recorder: this.activeRecorder,
+    });
     recorder.start();
-    console.log("started the recorder");
+    mediaLogger.debug("started the recorder");
   }
 
   stopRecording(): void {
-    console.log("stop recording");
+    mediaLogger.debug("stop recording clicked, current config", {
+      recorder: this.activeRecorder,
+      stream: this.activeStream,
+    });
     if (!this.activeRecorder) throw new Error("No active recorder");
-    console.log("stopping the recorder");
     this.activeRecorder.stop();
     this.activeRecorder = null;
-    console.log("releasing the active stream");
     this.releaseActiveStream();
-    console.log("released the active stream");
-    console.log("stopped the recorder");
+    mediaLogger.debug("stopped the recorder, released the active stream, current config", {
+      recorder: this.activeRecorder,
+      stream: this.activeStream,
+    });
   }
 
   getBlob(): Blob {
-    console.log("get blob length: ", this.chunks.length);
+    mediaLogger.debug("get blob length: ", this.chunks.length);
     return new Blob(this.chunks, { type: MIME_TYPE });
   }
 }
