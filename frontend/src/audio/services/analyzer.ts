@@ -1,4 +1,4 @@
-import { mediaLogger } from "./lib/logger";
+import audioLogger from "../init";
 
 // Result types for better error handling
 type AnalyzerInitResult =
@@ -74,7 +74,7 @@ class Analyzer {
       this.logAnalyzerDetails();
       return { success: true };
     } catch (error) {
-      mediaLogger.error("Error initializing analyzer", error);
+      audioLogger.error("Error initializing analyzer", error);
       return {
         success: false,
         error: "Failed to initialize audio analyzer",
@@ -89,10 +89,10 @@ class Analyzer {
   private createAudioContext(): AnalyzerInitResult {
     try {
       this.audioContext = new AudioContext();
-      mediaLogger.debug("Audio context created");
+      audioLogger.debug("Audio context created");
       return { success: true };
     } catch (error) {
-      mediaLogger.error("Error creating audio context", error);
+      audioLogger.error("Error creating audio context", error);
       return {
         success: false,
         error: "Failed to create audio context",
@@ -111,9 +111,9 @@ class Analyzer {
     if (this.audioContext.state === "suspended") {
       try {
         await this.audioContext.resume();
-        mediaLogger.debug("Audio context resumed");
+        audioLogger.debug("Audio context resumed");
       } catch (error) {
-        mediaLogger.error("Error resuming audio context", error);
+        audioLogger.error("Error resuming audio context", error);
         return {
           success: false,
           error: "Failed to resume audio context",
@@ -163,10 +163,10 @@ class Analyzer {
       analyser.minDecibels = -90;
       analyser.maxDecibels = -10;
 
-      mediaLogger.debug("Analyser created and configured");
+      audioLogger.debug("Analyser created and configured");
       return { success: true, analyser };
     } catch (error) {
-      mediaLogger.error("Error creating analyser", error);
+      audioLogger.error("Error creating analyser", error);
       return {
         success: false,
         error: "Failed to create analyser node",
@@ -188,10 +188,10 @@ class Analyzer {
 
     try {
       const source = this.audioContext.createMediaStreamSource(stream);
-      mediaLogger.debug("Source node created");
+      audioLogger.debug("Source node created");
       return { success: true, source };
     } catch (error) {
-      mediaLogger.error("Error creating source node", error);
+      audioLogger.error("Error creating source node", error);
       return {
         success: false,
         error: "Failed to create source node",
@@ -217,10 +217,10 @@ class Analyzer {
       }
 
       sourceResult.source.connect(this.analyser);
-      mediaLogger.debug("Connected to stream");
+      audioLogger.debug("Connected to stream");
       return { success: true };
     } catch (error) {
-      mediaLogger.error("Error connecting to stream", error);
+      audioLogger.error("Error connecting to stream", error);
       return {
         success: false,
         error: "Failed to connect to stream",
@@ -234,7 +234,7 @@ class Analyzer {
    */
   getTimeDomainData(): Float32Array | null {
     if (!this.analyser) {
-      mediaLogger.warn("Analyser not initialized");
+      audioLogger.warn("Analyser not initialized");
       return null;
     }
 
@@ -244,7 +244,7 @@ class Analyzer {
       this.analyser.getFloatTimeDomainData(buffer); // MUTATES buffer
       return buffer;
     } catch (error) {
-      mediaLogger.error("Error getting time domain data", error);
+      audioLogger.error("Error getting time domain data", error);
       return null;
     }
   }
@@ -285,10 +285,10 @@ class Analyzer {
       };
 
       animate();
-      mediaLogger.debug("Visualization started");
+      audioLogger.debug("Visualization started");
       return { success: true };
     } catch (error) {
-      mediaLogger.error("Error starting visualization", error);
+      audioLogger.error("Error starting visualization", error);
       return {
         success: false,
         error: "Failed to start visualization",
@@ -303,7 +303,7 @@ class Analyzer {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
-      mediaLogger.debug("Visualization stopped");
+      audioLogger.debug("Visualization stopped");
     }
   }
 
@@ -322,7 +322,7 @@ class Analyzer {
     }
 
     this.analyser = null;
-    mediaLogger.debug("Analyzer cleaned up");
+    audioLogger.debug("Analyzer cleaned up");
   }
 
   /**
@@ -330,11 +330,11 @@ class Analyzer {
    */
   private logAnalyzerDetails(): void {
     if (!this.audioContext) {
-      mediaLogger.warn("Audio context not available for logging");
+      audioLogger.warn("Audio context not available for logging");
       return;
     }
 
-    mediaLogger.debug("Analyzer details", {
+    audioLogger.debug("Analyzer details", {
       audioContextState: this.audioContext.state,
       analyserExists: !!this.analyser,
       analyserFftSize: this.analyser?.fftSize,

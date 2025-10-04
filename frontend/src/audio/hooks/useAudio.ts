@@ -1,5 +1,5 @@
-import { WhisperTranscriber } from "@/lib/transcriber";
-import { MediaManager } from "@/media";
+import { WhisperTranscriber } from "../services/transcriber";
+import { MediaManager } from "../services/mediaManager";
 import { useRef } from "react";
 
 const useAudio = () => {

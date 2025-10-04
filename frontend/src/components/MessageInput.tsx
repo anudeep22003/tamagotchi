@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { MicIcon } from "lucide-react";
 import AudioWaveform, {
   type AudioWaveformHandle,
-} from "./AudioWaveform";
+} from "../audio/components/AudioWaveform";
 import { mediaLogger } from "@/lib/logger";
 
 export const MessageInput = () => {

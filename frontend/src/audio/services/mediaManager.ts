@@ -1,19 +1,18 @@
-import { mediaLogger } from "@/lib/logger";
-import type { Transcriber } from "./lib/transcriber";
+import audioLogger from "../init";
+import type { Transcriber } from "./transcriber";
 import Analyzer from "./analyzer";
 
 const MIME_TYPE = "audio/webm";
 
-// Result types for better error handling
-type AudioStreamResult =
+export type AudioStreamResult =
   | { success: true; stream: MediaStream }
   | { success: false; error: string; code?: string };
 
-type RecordingResult =
+export type RecordingResult =
   | { success: true }
   | { success: false; error: string };
 
-type TranscriptionResult =
+export type TranscriptionResult =
   | { success: true; text: string }
   | { success: false; error: string };
 
@@ -80,7 +79,7 @@ export class MediaManager {
       this.activeStream = stream;
       return { success: true, stream };
     } catch (error) {
-      mediaLogger.error("Error getting audio permission", error);
+      audioLogger.error("Error getting audio permission", error);
       return {
         success: false,
         error: this.getUserFriendlyErrorMessage(error),
@@ -114,7 +113,7 @@ export class MediaManager {
 
       return { success: true };
     } catch (error) {
-      mediaLogger.error("Error initializing analyzer", error);
+      audioLogger.error("Error initializing analyzer", error);
       return {
         success: false,
         error: "Failed to initialize audio analyzer",
@@ -142,20 +141,20 @@ export class MediaManager {
    */
   private setupRecorderEventHandlers(recorder: MediaRecorder): void {
     recorder.onstart = () => {
-      mediaLogger.debug("Recording started");
+      audioLogger.debug("Recording started");
     };
 
     recorder.onstop = () => {
-      mediaLogger.debug("Recording stopped");
+      audioLogger.debug("Recording stopped");
     };
 
     recorder.onerror = (event) => {
-      mediaLogger.error("Recording error", { event });
+      audioLogger.error("Recording error", { event });
     };
 
     recorder.ondataavailable = (event) => {
       this.chunks.push(event.data);
-      mediaLogger.debug("Data available", {
+      audioLogger.debug("Data available", {
         chunkSize: this.chunks.length,
       });
     };
@@ -167,7 +166,7 @@ export class MediaManager {
    */
   async startRecording(): Promise<RecordingResult> {
     try {
-      mediaLogger.info("Starting recording");
+      audioLogger.info("Starting recording");
 
       // Step 1: Get audio stream
       const streamResult = await this.getAudioStream();
@@ -189,10 +188,10 @@ export class MediaManager {
       const recorder = this.createRecorder(streamResult.stream);
       recorder.start(100); // 100ms timeSlice prevents timing issues
 
-      mediaLogger.info("Recording started successfully");
+      audioLogger.info("Recording started successfully");
       return { success: true };
     } catch (error) {
-      mediaLogger.error(
+      audioLogger.error(
         "Unexpected error during recording start",
         error
       );
@@ -214,7 +213,7 @@ export class MediaManager {
         return { success: false, error: "No active recording to stop" };
       }
 
-      mediaLogger.info("Stopping recording");
+      audioLogger.info("Stopping recording");
 
       // Stop visualization
       this.analyzer.stopVisualization();
@@ -232,12 +231,12 @@ export class MediaManager {
         return transcriptionResult;
       }
 
-      mediaLogger.info(
+      audioLogger.info(
         "Recording stopped and transcribed successfully"
       );
       return { success: true, text: transcriptionResult.text };
     } catch (error) {
-      mediaLogger.error("Error stopping recording", error);
+      audioLogger.error("Error stopping recording", error);
       this.cleanup();
       return {
         success: false,
@@ -255,17 +254,17 @@ export class MediaManager {
         return { success: false, error: "No audio data to transcribe" };
       }
 
-      mediaLogger.info("Transcribing audio", {
+      audioLogger.info("Transcribing audio", {
         chunks: this.chunks.length,
       });
 
       const blob = this.getBlob();
       const text = await this.transcriber.transcribe(blob);
 
-      mediaLogger.debug("Transcription completed", { text });
+      audioLogger.debug("Transcription completed", { text });
       return { success: true, text };
     } catch (error) {
-      mediaLogger.error("Error transcribing audio", error);
+      audioLogger.error("Error transcribing audio", error);
       return {
         success: false,
         error: "Failed to transcribe audio",
@@ -312,7 +311,7 @@ export class MediaManager {
     if (this.activeStream) {
       this.activeStream.getTracks().forEach((track) => {
         track.stop();
-        mediaLogger.info("Audio track stopped", { track: track.kind });
+        audioLogger.info("Audio track stopped", { track: track.kind });
       });
       this.activeStream = null;
     }
@@ -322,7 +321,7 @@ export class MediaManager {
    * Get the recorded audio as a blob
    */
   private getBlob(): Blob {
-    mediaLogger.debug("Creating blob", { chunks: this.chunks.length });
+    audioLogger.debug("Creating blob", { chunks: this.chunks.length });
     return new Blob(this.chunks, { type: MIME_TYPE });
   }
 }

@@ -1,5 +1,5 @@
-import { httpClient } from "./httpClient";
-import { mediaLogger } from "./logger";
+import { httpClient } from "../init";
+import audioLogger from "../init";
 
 export interface Transcriber {
   transcribe(audio: Blob): Promise<string>;
@@ -10,7 +10,7 @@ export class WhisperTranscriber implements Transcriber {
   constructor() {}
 
   async transcribe(audio: Blob): Promise<string> {
-    mediaLogger.debug("transcribing audio, payload", { audio });
+    audioLogger.debug("transcribing audio, payload", { audio });
     const formData = new FormData();
     formData.append("file", audio);
     try {
@@ -20,7 +20,7 @@ export class WhisperTranscriber implements Transcriber {
       );
       return transcribedText;
     } catch (error) {
-      mediaLogger.error("error transcribing audio", { error });
+      audioLogger.error("error transcribing audio", { error });
       throw error;
     }
   }

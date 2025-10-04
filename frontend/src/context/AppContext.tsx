@@ -18,8 +18,8 @@ import {
   sendCodeMessage,
   sendWriterMessage,
 } from "@/lib/messageSendHandlers";
-import type { MediaManager } from "@/media";
-import useAudio from "@/hooks/useAudio";
+import type { MediaManager } from "@/audio/services/mediaManager";
+import useAudio from "@/audio/hooks/useAudio";
 
 interface AppContextType {
   inputText: string;
