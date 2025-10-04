@@ -80,6 +80,8 @@ export class MediaManager {
       mimeType: MIME_TYPE,
     });
     this.activeRecorder = recorder;
+    await this.analyzer.init();
+    this.analyzer.connectToStream(stream);
     mediaLogger.debug("attaching event listeners");
     recorder.onstart = () => {
       mediaLogger.debug("start event fired");
@@ -96,9 +98,11 @@ export class MediaManager {
       mediaLogger.debug("data available event fired", {
         chunkSize: this.chunks.length,
       });
+      const buffer = this.analyzer.getTimeDomainData();
+      mediaLogger.debug("time domain data retrieved", {
+        buffer: buffer,
+      });
     };
-
-    await this.analyzer.init();
 
     mediaLogger.info("starting recording, current config", {
       stream: this.activeStream,
@@ -111,6 +115,7 @@ export class MediaManager {
   }
 
   async stopRecording(): Promise<string> {
+    mediaLogger.debug("stop recording clicked");
     mediaLogger.info("stop recording clicked, current config", {
       recorder: this.activeRecorder,
       stream: this.activeStream,
