@@ -1,12 +1,23 @@
 import { mediaLogger } from "@/lib/logger";
+import type { Transcriber } from "./lib/transcriber";
 const MIME_TYPE = "audio/webm";
 
 export class MediaManager {
   private activeStream: MediaStream | null = null;
   private activeRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
+  private transcriber: Transcriber;
 
-  constructor() {}
+  constructor(transcriber: Transcriber) {
+    this.transcriber = transcriber;
+  }
+
+  async transcribe(): Promise<string> {
+    const blob = this.getBlob();
+    const text = await this.transcriber.transcribe(blob);
+    mediaLogger.debug("transcribed text", { text });
+    return text;
+  }
 
   async getAudioStream(): Promise<MediaStream | null> {
     try {
@@ -53,7 +64,9 @@ export class MediaManager {
     mediaLogger.debug("start recording clicked, current config", {
       stream: this.activeStream,
       recorder: this.activeRecorder,
+      chunks: this.chunks.length,
     });
+    this.chunks = [];
     const stream = await this.getAudioStream();
     if (!stream) throw new Error("Failed to get audio stream");
     const recorder = new MediaRecorder(stream, {
@@ -64,24 +77,29 @@ export class MediaManager {
     recorder.onstart = () => {
       mediaLogger.debug("start event fired");
     };
-    recorder.onstop = () => {
-      mediaLogger.debug("stop event fired");
-    };
+
+    // Event handlers
+    recorder.onstop = () => {};
     recorder.onerror = (event) => {
       mediaLogger.error("error event fired", { event });
+      throw new Error("error event fired");
     };
     recorder.ondataavailable = (event) => {
-      mediaLogger.debug("data available event fired", { event });
+      this.chunks.push(event.data);
+      mediaLogger.debug("data available event fired", {
+        chunkSize: this.chunks.length,
+      });
     };
-    mediaLogger.debug("starting the recorder, current config", {
+    mediaLogger.debug("starting recording, current config", {
       stream: this.activeStream,
       recorder: this.activeRecorder,
+      chunks: this.chunks.length,
     });
-    recorder.start();
-    mediaLogger.debug("started the recorder");
+    recorder.start(2000);
+    mediaLogger.debug("started recording");
   }
 
-  stopRecording(): void {
+  async stopRecording(): Promise<string> {
     mediaLogger.debug("stop recording clicked, current config", {
       recorder: this.activeRecorder,
       stream: this.activeStream,
@@ -90,10 +108,14 @@ export class MediaManager {
     this.activeRecorder.stop();
     this.activeRecorder = null;
     this.releaseActiveStream();
-    mediaLogger.debug("stopped the recorder, released the active stream, current config", {
-      recorder: this.activeRecorder,
-      stream: this.activeStream,
-    });
+    mediaLogger.debug(
+      "stopped the recorder, released the active stream, current config",
+      {
+        recorder: this.activeRecorder,
+        stream: this.activeStream,
+      }
+    );
+    return await this.transcribe();
   }
 
   getBlob(): Blob {

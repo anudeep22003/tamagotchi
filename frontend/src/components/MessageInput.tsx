@@ -79,7 +79,11 @@ export const MessageInput = () => {
         >
           Send
         </Button>
-        <Button onClick={handleRecordClick} size="sm">
+        <Button
+          onClick={handleRecordClick}
+          size="sm"
+          className={isRecording ? "bg-red-500 hover:bg-red-600" : ""}
+        >
           <MicIcon className="w-4 h-4" />{" "}
           {isRecording ? "Stop" : "Record"}
         </Button>
