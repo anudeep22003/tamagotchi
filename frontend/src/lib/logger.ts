@@ -15,7 +15,7 @@ export const rootLogger = log.getLogger("root");
 
 // Set default levels for each logger
 apiLogger.setLevel("debug");
-mediaLogger.setLevel("info");
+mediaLogger.setLevel("warn");
 rootLogger.setLevel("debug");
 
 // Export the default logger for general use

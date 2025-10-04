@@ -15,11 +15,11 @@ export const MessageInput = () => {
 
   const handleRecordClick = useCallback(async () => {
     if (isRecording) {
+      setIsRecording(false);
       const transcribedText = await mediaManager?.stopRecording();
       if (transcribedText) {
         setInputText((prevText) => prevText + "\n\n" + transcribedText);
       }
-      setIsRecording(false);
     } else {
       await mediaManager?.startRecording();
       setIsRecording(true);
