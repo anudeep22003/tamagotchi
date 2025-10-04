@@ -3,6 +3,8 @@ import { mediaLogger } from "./lib/logger";
 class Analyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
+  private animationFrameId: number | null = null;
+  private onDataCallback: ((data: Float32Array) => void) | null = null;
 
   constructor() {}
 
@@ -78,6 +80,45 @@ class Analyzer {
     const buffer = new Float32Array(this.analyser.frequencyBinCount);
     this.analyser.getFloatTimeDomainData(buffer);
     return buffer;
+  }
+
+  /**
+   * Register a callback to receive time domain data updates at 60fps
+   */
+  setDataCallback(callback: (data: Float32Array) => void) {
+    this.onDataCallback = callback;
+  }
+
+  /**
+   * Start the visualization animation loop
+   */
+  startVisualization() {
+    if (!this.analyser) {
+      mediaLogger.error("analyser not initialized");
+      return;
+    }
+
+    const animate = () => {
+      const buffer = this.getTimeDomainData();
+      if (buffer && this.onDataCallback) {
+        this.onDataCallback(buffer);
+      }
+      this.animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+    mediaLogger.debug("visualization started");
+  }
+
+  /**
+   * Stop the visualization animation loop
+   */
+  stopVisualization() {
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+      mediaLogger.debug("visualization stopped");
+    }
   }
 
   showDetails() {

@@ -2,6 +2,9 @@ import { useAppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { useRef, useEffect, useCallback, useState } from "react";
 import { MicIcon } from "lucide-react";
+import AudioWaveform, {
+  type AudioWaveformHandle,
+} from "./AudioWaveform";
 
 export const MessageInput = () => {
   const {
@@ -12,6 +15,7 @@ export const MessageInput = () => {
   } = useAppContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const waveformRef = useRef<AudioWaveformHandle>(null);
 
   const handleRecordClick = useCallback(async () => {
     if (isRecording) {
@@ -63,8 +67,23 @@ export const MessageInput = () => {
     [handleSubmit, isSubmitEnabled]
   );
 
+  useEffect(() => {
+    if (!mediaManager) return;
+
+    // Set up visualization callback
+    const handleVisualizationData = (buffer: Float32Array) => {
+      if (waveformRef.current) {
+        waveformRef.current.drawWaveform(buffer);
+      } else {
+        console.warn("waveformRef.current is null");
+      }
+    };
+
+    mediaManager.setVisualizationCallback(handleVisualizationData);
+  }, [mediaManager]);
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex gap-2 mb-2">
         <textarea
           ref={textareaRef}
@@ -91,6 +110,18 @@ export const MessageInput = () => {
           {isRecording ? "Stop" : "Record"}
         </Button>
       </div>
+
+      {/* Add the waveform visualization */}
+      {isRecording && (
+        <AudioWaveform
+          ref={waveformRef}
+          width={600}
+          height={150}
+          backgroundColor="#0a0a0a"
+          waveColor="#00ff88"
+          lineWidth={2}
+        />
+      )}
     </div>
   );
 };

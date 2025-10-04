@@ -15,6 +15,13 @@ export class MediaManager {
     this.analyzer = new Analyzer();
   }
 
+  /**
+   * Register a callback to receive real-time audio visualization data
+   */
+  setVisualizationCallback(callback: (data: Float32Array) => void) {
+    this.analyzer.setDataCallback(callback);
+  }
+
   async transcribe(): Promise<string> {
     mediaLogger.info("transcribing audio, chunks length", {
       chunks: this.chunks.length,
@@ -82,6 +89,10 @@ export class MediaManager {
     this.activeRecorder = recorder;
     await this.analyzer.init();
     this.analyzer.connectToStream(stream);
+
+    // Start visualization loop
+    this.analyzer.startVisualization();
+
     mediaLogger.debug("attaching event listeners");
     recorder.onstart = () => {
       mediaLogger.debug("start event fired");
@@ -97,10 +108,6 @@ export class MediaManager {
       this.chunks.push(event.data);
       mediaLogger.debug("data available event fired", {
         chunkSize: this.chunks.length,
-      });
-      const buffer = this.analyzer.getTimeDomainData();
-      mediaLogger.debug("time domain data retrieved", {
-        buffer: buffer,
       });
     };
 
@@ -122,6 +129,10 @@ export class MediaManager {
       analyzer: this.analyzer,
     });
     if (!this.activeRecorder) throw new Error("No active recorder");
+
+    // Stop visualization
+    this.analyzer.stopVisualization();
+
     this.activeRecorder.stop();
     this.activeRecorder = null;
     this.releaseActiveStream();
