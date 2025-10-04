@@ -13,6 +13,33 @@ type VisualizationResult =
   | { success: true }
   | { success: false; error: string };
 
+/**
+ * Audio Analyzer - Key Learnings:
+ *
+ * 1. AUDIO CONTEXT REUSE:
+ *    - AudioContext is expensive to create (browser limits)
+ *    - Reuse AudioContext and AnalyserNode across sessions
+ *    - DON'T store MediaStreamAudioSourceNode globally - recreate each time
+ *
+ * 2. ANALYSER NODE BEHAVIOR:
+ *    - Only OBSERVATIONAL node (no input/output manipulation)
+ *    - Fits into AudioContext as part of audio processing graph
+ *    - Other nodes: input → process → output
+ *    - Analyser: input → observe only
+ *
+ * 3. DATA EXTRACTION:
+ *    - getFloatTimeDomainData() MUTATES the buffer you pass in
+ *    - Buffer size = fftSize / 2 (Nyquist frequency symmetry)
+ *    - Don't use MediaRecorder.ondataavailable (fires every 100ms)
+ *    - Use requestAnimationFrame for 60fps smooth visualization
+ *    - No need to maintain data history - render each frame fresh
+ *
+ * 4. LIFECYCLE:
+ *    - AudioContext: create once, reuse, close on cleanup
+ *    - AnalyserNode: create once, reuse, null on cleanup
+ *    - SourceNode: create per stream, don't store globally
+ *    - Stream: recreate each recording session
+ */
 class Analyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
@@ -23,6 +50,7 @@ class Analyzer {
 
   /**
    * Initialize the audio context and analyzer
+   * REUSE: AudioContext + AnalyserNode
    */
   async init(): Promise<AnalyzerInitResult> {
     try {
@@ -56,6 +84,7 @@ class Analyzer {
 
   /**
    * Create a new audio context
+   * EXPENSIVE: Only create once, reuse across sessions
    */
   private createAudioContext(): AnalyzerInitResult {
     try {
@@ -97,6 +126,7 @@ class Analyzer {
 
   /**
    * Ensure analyser node exists and is properly configured
+   * REUSE: AnalyserNode across sessions
    */
   private ensureAnalyserExists(): AnalyzerInitResult {
     if (!this.analyser) {
@@ -112,6 +142,7 @@ class Analyzer {
 
   /**
    * Create and configure the analyser node
+   * Buffer size = fftSize / 2 (Nyquist frequency symmetry)
    */
   private createAnalyserAndConfigure():
     | { success: true; analyser: AnalyserNode }
@@ -127,7 +158,7 @@ class Analyzer {
       const analyser = this.audioContext.createAnalyser();
 
       // Configure analyser settings
-      analyser.fftSize = 256;
+      analyser.fftSize = 256; // Buffer size will be 128 (fftSize / 2)
       analyser.smoothingTimeConstant = 0.8;
       analyser.minDecibels = -90;
       analyser.maxDecibels = -10;
@@ -145,6 +176,7 @@ class Analyzer {
 
   /**
    * Create a source node from a media stream
+   * RECREATE: Don't store globally, create per stream
    */
   createSourceNode(stream: MediaStream): SourceNodeResult {
     if (!this.audioContext) {
@@ -198,6 +230,7 @@ class Analyzer {
 
   /**
    * Get time domain data from the analyser
+   * MUTATES: Buffer is modified in-place by getFloatTimeDomainData()
    */
   getTimeDomainData(): Float32Array | null {
     if (!this.analyser) {
@@ -206,8 +239,9 @@ class Analyzer {
     }
 
     try {
+      // Buffer size = fftSize / 2 (Nyquist frequency symmetry)
       const buffer = new Float32Array(this.analyser.frequencyBinCount);
-      this.analyser.getFloatTimeDomainData(buffer);
+      this.analyser.getFloatTimeDomainData(buffer); // MUTATES buffer
       return buffer;
     } catch (error) {
       mediaLogger.error("Error getting time domain data", error);
@@ -224,6 +258,7 @@ class Analyzer {
 
   /**
    * Start the visualization animation loop
+   * 60FPS: Use requestAnimationFrame, NOT MediaRecorder.ondataavailable (100ms)
    */
   startVisualization(): VisualizationResult {
     if (!this.analyser) {
@@ -244,7 +279,7 @@ class Analyzer {
       const animate = () => {
         const buffer = this.getTimeDomainData();
         if (buffer && this.onDataCallback) {
-          this.onDataCallback(buffer);
+          this.onDataCallback(buffer); // Fresh data each frame
         }
         this.animationFrameId = requestAnimationFrame(animate);
       };
@@ -274,6 +309,8 @@ class Analyzer {
 
   /**
    * Clean up all resources
+   * REUSE: AudioContext + AnalyserNode
+   * RECREATE: SourceNode (per stream)
    */
   cleanup(): void {
     this.stopVisualization();

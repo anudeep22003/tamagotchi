@@ -17,6 +17,29 @@ type TranscriptionResult =
   | { success: true; text: string }
   | { success: false; error: string };
 
+/**
+ * MediaManager - Key Learnings:
+ *
+ * 1. LIFECYCLE ORDER:
+ *    - Stream → AudioContext/Analyzer → MediaRecorder
+ *    - REUSE: AudioContext + Analyzer (expensive)
+ *    - RECREATE: Stream + MediaRecorder (per session)
+ *
+ * 2. STREAM MANAGEMENT:
+ *    - Always release stream after recording (browser/OS shows prominent audio sharing indicator)
+ *    - Recreate stream each session to avoid alarming users
+ *    - Stream permissions required from user
+ *
+ * 3. MEDIARECORDER TIMING:
+ *    - USE timeSlice (100ms) - prevents timing issues
+ *    - WITHOUT timeSlice: ondataavailable fires AFTER stop() → zero-sized chunks
+ *    - WITH timeSlice: captures everything in small slices, no data loss
+ *
+ * 4. RESOURCE CLEANUP:
+ *    - Release stream tracks immediately after recording
+ *    - Don't hold onto streams between sessions
+ *    - Clean up chunks array each session
+ */
 export class MediaManager {
   private activeStream: MediaStream | null = null;
   private activeRecorder: MediaRecorder | null = null;
@@ -40,10 +63,11 @@ export class MediaManager {
 
   /**
    * Get audio stream with proper error handling
+   * RECREATE: New stream each session (permissions + user experience)
    */
   async getAudioStream(): Promise<AudioStreamResult> {
     try {
-      this.releaseActiveStream();
+      this.releaseActiveStream(); // Always release previous stream
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -67,6 +91,7 @@ export class MediaManager {
 
   /**
    * Initialize the audio analyzer
+   * REUSE: Analyzer + AudioContext (expensive to create)
    */
   async initializeAnalyzer(
     stream: MediaStream
@@ -99,6 +124,7 @@ export class MediaManager {
 
   /**
    * Create and configure a MediaRecorder
+   * RECREATE: New recorder each session
    */
   createRecorder(stream: MediaStream): MediaRecorder {
     const recorder = new MediaRecorder(stream, {
@@ -112,6 +138,7 @@ export class MediaManager {
 
   /**
    * Set up event handlers for the recorder
+   * TIMING: ondataavailable fires during recording with timeSlice
    */
   private setupRecorderEventHandlers(recorder: MediaRecorder): void {
     recorder.onstart = () => {
@@ -136,6 +163,7 @@ export class MediaManager {
 
   /**
    * Start recording - now much simpler and focused
+   * ORDER: Stream → Analyzer → Recorder
    */
   async startRecording(): Promise<RecordingResult> {
     try {
@@ -157,9 +185,9 @@ export class MediaManager {
       }
 
       // Step 3: Create and start recorder
-      this.chunks = [];
+      this.chunks = []; // Reset chunks each session
       const recorder = this.createRecorder(streamResult.stream);
-      recorder.start(100);
+      recorder.start(100); // 100ms timeSlice prevents timing issues
 
       mediaLogger.info("Recording started successfully");
       return { success: true };
@@ -178,6 +206,7 @@ export class MediaManager {
 
   /**
    * Stop recording and return transcription
+   * CLEANUP: Release stream immediately after recording
    */
   async stopRecording(): Promise<TranscriptionResult> {
     try {
@@ -194,7 +223,7 @@ export class MediaManager {
       this.activeRecorder.stop();
       this.activeRecorder = null;
 
-      // Clean up stream
+      // Clean up stream immediately (prevents prominent audio sharing indicator)
       this.releaseActiveStream();
 
       // Transcribe the audio
@@ -277,6 +306,7 @@ export class MediaManager {
 
   /**
    * Release the active audio stream
+   * IMPORTANT: Prevents prominent audio sharing indicator
    */
   releaseActiveStream(): void {
     if (this.activeStream) {
