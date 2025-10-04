@@ -23,7 +23,9 @@ import useAudio from "@/hooks/useAudio";
 
 interface AppContextType {
   inputText: string;
-  setInputText: (inputText: string) => void;
+  setInputText: (
+    inputText: string | ((prevText: string) => string)
+  ) => void;
   showGenerative: boolean;
   setShowGenerative: (showGenerative: boolean) => void;
   handleInputSendClick: () => Promise<void>;

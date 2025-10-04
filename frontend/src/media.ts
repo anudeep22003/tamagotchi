@@ -13,6 +13,9 @@ export class MediaManager {
   }
 
   async transcribe(): Promise<string> {
+    mediaLogger.info("transcribing audio, chunks length", {
+      chunks: this.chunks.length,
+    });
     const blob = this.getBlob();
     const text = await this.transcriber.transcribe(blob);
     mediaLogger.debug("transcribed text", { text });
@@ -61,7 +64,7 @@ export class MediaManager {
   }
 
   async startRecording(): Promise<void> {
-    mediaLogger.debug("start recording clicked, current config", {
+    mediaLogger.info("start recording clicked, current config", {
       stream: this.activeStream,
       recorder: this.activeRecorder,
       chunks: this.chunks.length,
@@ -90,17 +93,18 @@ export class MediaManager {
         chunkSize: this.chunks.length,
       });
     };
-    mediaLogger.debug("starting recording, current config", {
+
+    mediaLogger.info("starting recording, current config", {
       stream: this.activeStream,
       recorder: this.activeRecorder,
       chunks: this.chunks.length,
     });
-    recorder.start(2000);
+    recorder.start(100);
     mediaLogger.debug("started recording");
   }
 
   async stopRecording(): Promise<string> {
-    mediaLogger.debug("stop recording clicked, current config", {
+    mediaLogger.info("stop recording clicked, current config", {
       recorder: this.activeRecorder,
       stream: this.activeStream,
     });
@@ -108,7 +112,7 @@ export class MediaManager {
     this.activeRecorder.stop();
     this.activeRecorder = null;
     this.releaseActiveStream();
-    mediaLogger.debug(
+    mediaLogger.info(
       "stopped the recorder, released the active stream, current config",
       {
         recorder: this.activeRecorder,

@@ -10,6 +10,7 @@ router = APIRouter(prefix="/transcribe", tags=["transcribe"])
 logger = logger.bind(name=__name__)
 
 
+
 @router.post("/whisper")
 async def transcribe_whisper(file: UploadFile = File(...)) -> str:
     audio_bytes = await file.read()
