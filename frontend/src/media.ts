@@ -1,5 +1,6 @@
 import { mediaLogger } from "@/lib/logger";
 import type { Transcriber } from "./lib/transcriber";
+import Analyzer from "./analyzer";
 const MIME_TYPE = "audio/webm";
 
 export class MediaManager {
@@ -7,9 +8,11 @@ export class MediaManager {
   private activeRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
   private transcriber: Transcriber;
+  private analyzer: Analyzer;
 
   constructor(transcriber: Transcriber) {
     this.transcriber = transcriber;
+    this.analyzer = new Analyzer();
   }
 
   async transcribe(): Promise<string> {
@@ -68,6 +71,7 @@ export class MediaManager {
       stream: this.activeStream,
       recorder: this.activeRecorder,
       chunks: this.chunks.length,
+      analyzer: this.analyzer,
     });
     this.chunks = [];
     const stream = await this.getAudioStream();
@@ -94,10 +98,13 @@ export class MediaManager {
       });
     };
 
+    await this.analyzer.init();
+
     mediaLogger.info("starting recording, current config", {
       stream: this.activeStream,
       recorder: this.activeRecorder,
       chunks: this.chunks.length,
+      analyzer: this.analyzer,
     });
     recorder.start(100);
     mediaLogger.debug("started recording");
@@ -107,6 +114,7 @@ export class MediaManager {
     mediaLogger.info("stop recording clicked, current config", {
       recorder: this.activeRecorder,
       stream: this.activeStream,
+      analyzer: this.analyzer,
     });
     if (!this.activeRecorder) throw new Error("No active recorder");
     this.activeRecorder.stop();
@@ -117,6 +125,7 @@ export class MediaManager {
       {
         recorder: this.activeRecorder,
         stream: this.activeStream,
+        analyzer: this.analyzer,
       }
     );
     return await this.transcribe();

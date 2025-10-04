@@ -6,7 +6,8 @@ export interface Transcriber {
 }
 
 export class WhisperTranscriber implements Transcriber {
-  private url: string = "/api/transcribe/whisper";
+  //! remove test
+  private url: string = "/api/transcribe/whisper-test";
   constructor() {}
 
   async transcribe(audio: Blob): Promise<string> {
@@ -14,7 +15,10 @@ export class WhisperTranscriber implements Transcriber {
     const formData = new FormData();
     formData.append("file", audio);
     try {
-      const transcribedText = await httpClient.post<string>(this.url, formData);
+      const transcribedText = await httpClient.post<string>(
+        this.url,
+        formData
+      );
       return transcribedText;
     } catch (error) {
       mediaLogger.error("error transcribing audio", { error });
