@@ -6,9 +6,7 @@ export interface Transcriber {
 }
 
 export class WhisperTranscriber implements Transcriber {
-  //! remove test
-    private url: string = "/api/transcribe/whisper-test";
-//   private url: string = "/api/transcribe/whisper";
+  private url: string = "/api/transcribe/whisper";
   constructor() {}
 
   async transcribe(audio: Blob): Promise<string> {

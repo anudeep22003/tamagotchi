@@ -1,4 +1,9 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import {
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 
 interface AudioWaveformProps {
   width?: number;
@@ -15,7 +20,10 @@ export interface AudioWaveformHandle {
 /**
  * Renders a real-time audio waveform visualization
  */
-export const AudioWaveform = forwardRef<AudioWaveformHandle, AudioWaveformProps>(
+export const AudioWaveform = forwardRef<
+  AudioWaveformHandle,
+  AudioWaveformProps
+>(
   (
     {
       width = 800,
@@ -66,7 +74,10 @@ export const AudioWaveform = forwardRef<AudioWaveformHandle, AudioWaveformProps>
       }
 
       // Debug: Log first few values to see if we're getting data
-      console.log("Drawing waveform, sample values:", dataArray.slice(0, 5));
+      console.log(
+        "Drawing waveform, sample values:",
+        dataArray.slice(0, 5)
+      );
 
       // Clear canvas
       ctx.fillStyle = backgroundColor;

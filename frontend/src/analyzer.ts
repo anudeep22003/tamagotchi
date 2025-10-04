@@ -1,5 +1,18 @@
 import { mediaLogger } from "./lib/logger";
 
+// Result types for better error handling
+type AnalyzerInitResult =
+  | { success: true }
+  | { success: false; error: string };
+
+type SourceNodeResult =
+  | { success: true; source: MediaStreamAudioSourceNode }
+  | { success: false; error: string };
+
+type VisualizationResult =
+  | { success: true }
+  | { success: false; error: string };
+
 class Analyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
@@ -8,127 +21,287 @@ class Analyzer {
 
   constructor() {}
 
-  async init() {
-    if (!this.audioContext) {
-      this.audioContext = new AudioContext();
-      mediaLogger.debug("audio context initialized");
-      // If for whatever reason due to browser or user action
-      // opens in suspended state
-      if (this.audioContext.state === "suspended") {
-        await this.audioContext.resume();
+  /**
+   * Initialize the audio context and analyzer
+   */
+  async init(): Promise<AnalyzerInitResult> {
+    try {
+      if (!this.audioContext) {
+        const contextResult = this.createAudioContext();
+        if (!contextResult.success) {
+          return contextResult;
+        }
       }
 
-      mediaLogger.debug("creating analyser and configuring");
-      this.analyser = this.createAnalyserAndConfigure();
-
-      if (!this.analyser) {
-        mediaLogger.error("analyser not initialized");
-        throw new Error("analyser not initialized");
+      const resumeResult = await this.resumeAudioContext();
+      if (!resumeResult.success) {
+        return resumeResult;
       }
-      mediaLogger.debug("analyser initialized", {
-        analyser: this.analyser,
-      });
-    } else if (this.audioContext.state === "suspended") {
-      await this.audioContext.resume();
-      if (!this.analyser) {
-        mediaLogger.error("analyser not initialized");
-        this.analyser = this.createAnalyserAndConfigure();
+
+      const analyserResult = this.ensureAnalyserExists();
+      if (!analyserResult.success) {
+        return analyserResult;
       }
+
+      this.logAnalyzerDetails();
+      return { success: true };
+    } catch (error) {
+      mediaLogger.error("Error initializing analyzer", error);
+      return {
+        success: false,
+        error: "Failed to initialize audio analyzer",
+      };
     }
-
-    this.showDetails();
-  }
-
-  createSourceNode(stream: MediaStream) {
-    mediaLogger.debug("creating source node");
-    if (!this.audioContext) {
-      mediaLogger.error("audio context not initialized");
-      throw new Error("audio context not initialized");
-    }
-    const source = this.audioContext.createMediaStreamSource(stream);
-    mediaLogger.debug("source node created");
-    return source;
-  }
-
-  connectToStream(stream: MediaStream) {
-    mediaLogger.debug("connecting to stream");
-    const source = this.createSourceNode(stream);
-    source.connect(this.analyser!);
-    mediaLogger.debug("connected to stream");
-  }
-
-  createAnalyserAndConfigure() {
-    if (!this.audioContext) {
-      mediaLogger.error("audio context not initialized");
-      throw new Error("audio context not initialized");
-    }
-    const analyser = this.audioContext.createAnalyser();
-
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    analyser.minDecibels = -90;
-    analyser.maxDecibels = -10;
-
-    return analyser;
-  }
-
-  getTimeDomainData() {
-    if (!this.analyser) {
-      mediaLogger.error("analyser not initialized");
-      return null;
-    }
-    const buffer = new Float32Array(this.analyser.frequencyBinCount);
-    this.analyser.getFloatTimeDomainData(buffer);
-    return buffer;
   }
 
   /**
-   * Register a callback to receive time domain data updates at 60fps
+   * Create a new audio context
    */
-  setDataCallback(callback: (data: Float32Array) => void) {
+  private createAudioContext(): AnalyzerInitResult {
+    try {
+      this.audioContext = new AudioContext();
+      mediaLogger.debug("Audio context created");
+      return { success: true };
+    } catch (error) {
+      mediaLogger.error("Error creating audio context", error);
+      return {
+        success: false,
+        error: "Failed to create audio context",
+      };
+    }
+  }
+
+  /**
+   * Resume suspended audio context
+   */
+  private async resumeAudioContext(): Promise<AnalyzerInitResult> {
+    if (!this.audioContext) {
+      return { success: false, error: "Audio context not initialized" };
+    }
+
+    if (this.audioContext.state === "suspended") {
+      try {
+        await this.audioContext.resume();
+        mediaLogger.debug("Audio context resumed");
+      } catch (error) {
+        mediaLogger.error("Error resuming audio context", error);
+        return {
+          success: false,
+          error: "Failed to resume audio context",
+        };
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Ensure analyser node exists and is properly configured
+   */
+  private ensureAnalyserExists(): AnalyzerInitResult {
+    if (!this.analyser) {
+      const analyserResult = this.createAnalyserAndConfigure();
+      if (!analyserResult.success) {
+        return analyserResult;
+      }
+      this.analyser = analyserResult.analyser;
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Create and configure the analyser node
+   */
+  private createAnalyserAndConfigure():
+    | { success: true; analyser: AnalyserNode }
+    | { success: false; error: string } {
+    if (!this.audioContext) {
+      return {
+        success: false,
+        error: "Audio context not initialized",
+      };
+    }
+
+    try {
+      const analyser = this.audioContext.createAnalyser();
+
+      // Configure analyser settings
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.minDecibels = -90;
+      analyser.maxDecibels = -10;
+
+      mediaLogger.debug("Analyser created and configured");
+      return { success: true, analyser };
+    } catch (error) {
+      mediaLogger.error("Error creating analyser", error);
+      return {
+        success: false,
+        error: "Failed to create analyser node",
+      };
+    }
+  }
+
+  /**
+   * Create a source node from a media stream
+   */
+  createSourceNode(stream: MediaStream): SourceNodeResult {
+    if (!this.audioContext) {
+      return {
+        success: false,
+        error: "Audio context not initialized",
+      };
+    }
+
+    try {
+      const source = this.audioContext.createMediaStreamSource(stream);
+      mediaLogger.debug("Source node created");
+      return { success: true, source };
+    } catch (error) {
+      mediaLogger.error("Error creating source node", error);
+      return {
+        success: false,
+        error: "Failed to create source node",
+      };
+    }
+  }
+
+  /**
+   * Connect a media stream to the analyser
+   */
+  connectToStream(stream: MediaStream): AnalyzerInitResult {
+    try {
+      const sourceResult = this.createSourceNode(stream);
+      if (!sourceResult.success) {
+        return { success: false, error: sourceResult.error };
+      }
+
+      if (!this.analyser) {
+        return {
+          success: false,
+          error: "Analyser not initialized",
+        };
+      }
+
+      sourceResult.source.connect(this.analyser);
+      mediaLogger.debug("Connected to stream");
+      return { success: true };
+    } catch (error) {
+      mediaLogger.error("Error connecting to stream", error);
+      return {
+        success: false,
+        error: "Failed to connect to stream",
+      };
+    }
+  }
+
+  /**
+   * Get time domain data from the analyser
+   */
+  getTimeDomainData(): Float32Array | null {
+    if (!this.analyser) {
+      mediaLogger.warn("Analyser not initialized");
+      return null;
+    }
+
+    try {
+      const buffer = new Float32Array(this.analyser.frequencyBinCount);
+      this.analyser.getFloatTimeDomainData(buffer);
+      return buffer;
+    } catch (error) {
+      mediaLogger.error("Error getting time domain data", error);
+      return null;
+    }
+  }
+
+  /**
+   * Register a callback to receive time domain data updates
+   */
+  setDataCallback(callback: (data: Float32Array) => void): void {
     this.onDataCallback = callback;
   }
 
   /**
    * Start the visualization animation loop
    */
-  startVisualization() {
+  startVisualization(): VisualizationResult {
     if (!this.analyser) {
-      mediaLogger.error("analyser not initialized");
-      return;
+      return {
+        success: false,
+        error: "Analyser not initialized",
+      };
     }
 
-    const animate = () => {
-      const buffer = this.getTimeDomainData();
-      if (buffer && this.onDataCallback) {
-        this.onDataCallback(buffer);
-      }
-      this.animationFrameId = requestAnimationFrame(animate);
-    };
+    if (this.animationFrameId !== null) {
+      return {
+        success: false,
+        error: "Visualization already running",
+      };
+    }
 
-    animate();
-    mediaLogger.debug("visualization started");
+    try {
+      const animate = () => {
+        const buffer = this.getTimeDomainData();
+        if (buffer && this.onDataCallback) {
+          this.onDataCallback(buffer);
+        }
+        this.animationFrameId = requestAnimationFrame(animate);
+      };
+
+      animate();
+      mediaLogger.debug("Visualization started");
+      return { success: true };
+    } catch (error) {
+      mediaLogger.error("Error starting visualization", error);
+      return {
+        success: false,
+        error: "Failed to start visualization",
+      };
+    }
   }
 
   /**
    * Stop the visualization animation loop
    */
-  stopVisualization() {
+  stopVisualization(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
-      mediaLogger.debug("visualization stopped");
+      mediaLogger.debug("Visualization stopped");
     }
   }
 
-  showDetails() {
+  /**
+   * Clean up all resources
+   */
+  cleanup(): void {
+    this.stopVisualization();
+    this.onDataCallback = null;
+
+    if (this.audioContext && this.audioContext.state !== "closed") {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+
+    this.analyser = null;
+    mediaLogger.debug("Analyzer cleaned up");
+  }
+
+  /**
+   * Log analyzer details for debugging
+   */
+  private logAnalyzerDetails(): void {
     if (!this.audioContext) {
-      mediaLogger.error("audio context not initialized");
+      mediaLogger.warn("Audio context not available for logging");
       return;
     }
-    mediaLogger.debug("Analyzer context", {
-      audioContext: this.audioContext,
-      analyser: this.analyser,
+
+    mediaLogger.debug("Analyzer details", {
+      audioContextState: this.audioContext.state,
+      analyserExists: !!this.analyser,
+      analyserFftSize: this.analyser?.fftSize,
+      analyserFrequencyBinCount: this.analyser?.frequencyBinCount,
     });
   }
 }

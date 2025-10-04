@@ -5,6 +5,7 @@ import { MicIcon } from "lucide-react";
 import AudioWaveform, {
   type AudioWaveformHandle,
 } from "./AudioWaveform";
+import { mediaLogger } from "@/lib/logger";
 
 export const MessageInput = () => {
   const {
@@ -20,15 +21,28 @@ export const MessageInput = () => {
   const handleRecordClick = useCallback(async () => {
     if (isRecording) {
       setIsRecording(false);
-      const transcribedText = await mediaManager?.stopRecording();
-      if (transcribedText) {
-        setInputText((prevText) => prevText + "\n\n" + transcribedText);
+      const result = await mediaManager?.stopRecording();
+      if (result?.success && result.text) {
+        // so that the double new line is not added when inputText is empty
+        if (inputText) {
+          setInputText((prevText) => prevText + "\n\n" + result.text);
+        } else {
+          setInputText(result.text);
+        }
+      } else if (result && !result.success) {
+        // Handle error - maybe show a toast or alert
+        mediaLogger.error("Failed to stop recording:", result.error);
       }
     } else {
-      await mediaManager?.startRecording();
-      setIsRecording(true);
+      const result = await mediaManager?.startRecording();
+      if (result?.success) {
+        setIsRecording(true);
+      } else if (result && !result.success) {
+        // Handle error - maybe show a toast or alert
+        mediaLogger.error("Failed to start recording:", result.error);
+      }
     }
-  }, [mediaManager, isRecording, setInputText]);
+  }, [mediaManager, isRecording, setInputText, inputText]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
