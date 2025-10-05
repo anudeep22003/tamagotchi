@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request, Response
 from pydantic import Field
 
-from core.sockets.envelope_type import AliasedBaseModel
+from core.sockets.types.envelope import AliasedBaseModel
 
 router = APIRouter(prefix="/session")
 

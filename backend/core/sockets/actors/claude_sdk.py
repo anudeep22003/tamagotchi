@@ -17,9 +17,9 @@ from claude_code_sdk import Message as ClaudeSDKMessage
 from loguru import logger
 from pydantic import Field, ValidationError
 
-from core.sockets.envelope_type import AckFail, AckOk, AliasedBaseModel, Envelope, Error
+from core.sockets.types.envelope import AckFail, AckOk, AliasedBaseModel, Envelope, Error
 
-from . import sio
+from .. import sio
 
 logger = logger.bind(name=__name__)
 
@@ -240,3 +240,9 @@ class ClaudeSDKActor:
             data={"finish_reason": "stop"},
         )
         await sio.emit("s2c.claude.stream.end", envelope.model_dump_json(), to=sid)
+
+
+@sio.on("c2s.claude.stream.start")
+async def request_claude_stream(sid: str, envelope: dict) -> str:
+    claude_sdk_actor = ClaudeSDKActor()
+    return claude_sdk_actor.handle_stream_start(sid, envelope)

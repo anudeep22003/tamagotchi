@@ -5,8 +5,8 @@ from typing import Generic, Literal, Protocol, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from core.sockets.envelope_type import AckFail, AckOk, Actor, Envelope, Error
-from core.sockets.types import Message
+from core.sockets.types.envelope import AckFail, AckOk, Actor, Envelope, Error
+from core.sockets.types.message import Message
 
 MODEL_TYPE = Literal["gpt-4o", "gpt-5"]
 
