@@ -1,5 +1,5 @@
 import type { BaseMessage } from "@/store/useMessageStore";
-import type { Actor } from "@/types/envelopeType";
+import type { Actor } from "@/socket/envelopeType";
 import { WriterMessage } from "./WriterMessage";
 import { ClaudeMessage } from "./ClaudeMessage";
 import { CodeMessage } from "./CodeMessage";

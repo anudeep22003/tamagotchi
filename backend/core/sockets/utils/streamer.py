@@ -2,10 +2,10 @@ from typing import Any, Literal
 
 from loguru import logger
 
-from core.sockets.types import Message
+from core.sockets.types.envelope import Actor, Envelope
+from core.sockets.types.message import Message
 
-from . import async_openai_client, sio
-from .envelope_type import Actor, Envelope
+from .. import async_openai_client, sio
 
 logger = logger.bind(name=__name__)
 

@@ -3,12 +3,12 @@ from typing import Literal
 from loguru import logger
 from pydantic import Field
 
-from core.sockets.base import BaseActor
-from core.sockets.streamer import stream_chunks_openai
-from core.sockets.types import Message
+from core.sockets.actors.base import BaseActor
+from core.sockets.types.envelope import AliasedBaseModel
+from core.sockets.types.message import Message
+from core.sockets.utils.streamer import stream_chunks_openai
 
-from . import sio
-from .envelope_type import AliasedBaseModel
+from .. import sio
 
 logger = logger.bind(name=__name__)
 

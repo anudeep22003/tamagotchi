@@ -1,4 +1,4 @@
-import type { Actor, Envelope } from "@/types/envelopeType";
+import type { Actor, Envelope } from "@/socket/envelopeType";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
@@ -18,7 +18,6 @@ export interface BaseMessage {
 export type MessageType = "human" | Actor;
 
 export type TypedMessage = BaseMessage;
-
 
 export interface MessageState {
   allMessages: TypedMessage[];

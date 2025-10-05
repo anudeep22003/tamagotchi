@@ -5,9 +5,6 @@ from . import active_connections, sio
 logger = logger.bind(name=__name__)
 
 
-MODEL = "gpt-5"
-
-
 @sio.event
 async def connect(sid: str, environ: dict) -> None:
     logger.info("connection established")
