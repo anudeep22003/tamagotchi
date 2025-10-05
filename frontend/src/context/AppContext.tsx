@@ -6,7 +6,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { useSocket } from "@/hooks/useSocket";
+import { useSocket } from "@/socket/useSocket";
 import { Socket } from "socket.io-client";
 import {
   useHumanAreaMessages,
@@ -17,7 +17,7 @@ import {
   sendClaudeMessage,
   sendCodeMessage,
   sendWriterMessage,
-} from "@/lib/messageSendHandlers";
+} from "../socket/messageSendHandlers";
 import type { MediaManager } from "@/audio/services/mediaManager";
 import useAudio from "@/audio/hooks/useAudio";
 

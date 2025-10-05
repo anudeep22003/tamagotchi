@@ -1,4 +1,4 @@
-import type { Actor } from "@/types/envelopeType";
+import type { Actor } from "@/socket/envelopeType";
 import { Loader2 } from "lucide-react";
 
 interface TabLabelProps {
