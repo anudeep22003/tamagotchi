@@ -5,6 +5,8 @@ import {
   useImperativeHandle,
 } from "react";
 
+import audioLogger from "../init";
+
 interface AudioWaveformProps {
   width?: number;
   height?: number;
@@ -63,18 +65,18 @@ export const AudioWaveform = forwardRef<
     const drawWaveform = (dataArray: Float32Array) => {
       const canvas = canvasRef.current;
       if (!canvas) {
-        console.warn("Canvas not available");
+        audioLogger.warn("Canvas not available");
         return;
       }
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        console.warn("Canvas context not available");
+        audioLogger.warn("Canvas context not available");
         return;
       }
 
       // Debug: Log first few values to see if we're getting data
-      console.log(
+      audioLogger.debug(
         "Drawing waveform, sample values:",
         dataArray.slice(0, 5)
       );

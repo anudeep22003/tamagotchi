@@ -2,7 +2,7 @@ import type { Actor, Envelope } from "@/socket/envelopeType";
 import {
   constructChatStreamMessages,
   prepareCodeMessage,
-} from "./messageUtils";
+} from "@/lib/messageUtils";
 import type { TypedMessage } from "@/store/useMessageStore";
 
 type EmitCallback = (
